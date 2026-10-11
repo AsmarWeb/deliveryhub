@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\V1\DeliveryTrackingController;
 use App\Http\Controllers\Api\V1\ProofOfDeliveryViewController;
 use App\Http\Controllers\Api\V1\ProofOfDeliveryController;
 use App\Http\Controllers\Api\V1\DeliveryCompletionController;
@@ -63,6 +64,10 @@ Route::prefix('v1')->group(function () {
             )
                 ->where('type', 'photo|signature')
                 ->name('deliveries.proof.file');
+            Route::get(
+                '/{delivery}/tracking',
+                DeliveryTrackingController::class
+            )->name('deliveries.tracking');
         });
     Route::middleware('auth:sanctum')
         ->prefix('driver')

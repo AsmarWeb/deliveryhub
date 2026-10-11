@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\DeliveryTrackingController;
 use App\Http\Controllers\Api\V1\ProofOfDeliveryViewController;
@@ -15,6 +16,10 @@ use App\Http\Controllers\Api\V1\DeliveryPricingController;
 use App\Http\Controllers\Api\V1\DeliveryController;
 
 Route::prefix('v1')->group(function () {
+
+    Route::middleware('auth:sanctum')
+        ->get('/dashboard', DashboardController::class)
+        ->name('dashboard');
 
     Route::prefix('auth')->group(function () {
 

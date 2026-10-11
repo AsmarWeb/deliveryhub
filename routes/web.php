@@ -1,7 +1,18 @@
 <?php
 
 use App\Http\Controllers\Auth\WebAuthController;
+use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\MerchantDeliveryController;
+use App\Http\Controllers\Web\MerchantDeliveryCreationController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/language/{locale}', function (string $locale) {
+    abort_unless(in_array($locale, ['ar', 'en'], true), 404);
+
+    session(['locale' => $locale]);
+
+    return redirect()->back(fallback: route('web.dashboard'));
+})->middleware('auth')->name('language.switch');
 
 Route::view('/', 'welcome');
 
@@ -23,16 +34,23 @@ Route::middleware('auth')->group(function () {
         'logout'
     ])->name('logout');
 
-    Route::get('/dashboard', function () {
-        abort_unless(
-            auth()->user()->hasRole([
-                'admin',
-                'merchant',
-                'driver',
-            ]),
-            403
-        );
+    Route::get(
+        '/dashboard',
+        DashboardController::class
+    )->name('web.dashboard');
 
-        return view('dashboard.index');
-    })->name('web.dashboard');
+    Route::get(
+        '/merchant/deliveries',
+        [MerchantDeliveryController::class, 'index']
+    )->name('merchant.deliveries.index');
+
+    Route::get(
+        '/merchant/deliveries/create',
+        [MerchantDeliveryCreationController::class, 'create']
+    )->name('merchant.deliveries.create');
+
+    Route::post(
+        '/merchant/deliveries',
+        [MerchantDeliveryCreationController::class, 'store']
+    )->name('merchant.deliveries.store');
 });

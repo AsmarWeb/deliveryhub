@@ -1,0 +1,56 @@
+<?php
+
+return [
+    'create_delivery' => 'إنشاء شحنة',
+    'create_new' => 'إنشاء شحنة جديدة',
+    'description' => 'أدخل تفاصيل الشحنة لإنشاء طلب توصيل مبدئي.',
+    'back_to_deliveries' => 'العودة إلى الشحنات',
+    'validation_errors' => 'يرجى تصحيح الأخطاء التالية:',
+
+    'no_addresses_title' => 'لا توجد عناوين محفوظة',
+    'no_addresses_description' => 'يجب إضافة عنوان واحد على الأقل إلى حساب التاجر قبل إنشاء طلب توصيل.',
+    'add_address' => 'إضافة عنوان',
+
+    'address_section' => 'الاستلام والتسليم',
+    'address_section_hint' => 'اختر عنوان استلام الشحنة وعنوان تسليمها.',
+    'pickup_address' => 'عنوان الاستلام',
+    'dropoff_address' => 'عنوان التسليم',
+    'select_pickup' => 'اختر عنوان الاستلام',
+    'select_dropoff' => 'اختر عنوان التسليم',
+    'address_number' => 'العنوان رقم :number',
+
+    'recipient_section' => 'معلومات المستلم',
+    'recipient_name' => 'اسم المستلم',
+    'recipient_phone' => 'رقم هاتف المستلم',
+    'recipient_name_placeholder' => 'الاسم الكامل للمستلم',
+
+    'package_section' => 'تفاصيل الطرد',
+    'package_type' => 'نوع الطرد',
+    'package_type_placeholder' => 'مستندات، صندوق، أجهزة إلكترونية...',
+    'weight' => 'الوزن (كجم)',
+    'scheduled_pickup' => 'موعد الاستلام',
+    'dubai_timezone' => 'جميع المواعيد حسب توقيت الإمارات (Asia/Dubai).',
+    'special_instructions' => 'تعليمات خاصة',
+    'instructions_placeholder' => 'أي تعليمات إضافية للتعامل مع الشحنة...',
+
+    'cancel' => 'إلغاء',
+    'create_draft' => 'إنشاء شحنة مبدئية',
+
+    'manage_description' => 'تتبّع طلبات التوصيل وإدارتها بسهولة.',
+    'search_tracking' => 'البحث برقم التتبع',
+    'search_placeholder' => 'أدخل رقم تتبع الشحنة...',
+    'status' => 'الحالة',
+    'all_statuses' => 'جميع الحالات',
+    'apply_filters' => 'تطبيق الفلاتر',
+    'filters_active' => 'توجد فلاتر بحث مفعّلة.',
+    'clear_filters' => 'مسح الفلاتر',
+    'delivery_list' => 'قائمة الشحنات',
+    'results_count' => 'عدد النتائج: :count',
+    'total_deliveries' => 'الإجمالي: :count',
+    'tracking' => 'رقم التتبع',
+    'recipient' => 'المستلم',
+    'created' => 'تاريخ الإنشاء',
+    'no_deliveries' => 'لم يتم العثور على شحنات.',
+    'no_deliveries_description' => 'يمكنك البدء بإنشاء أول طلب توصيل.',
+
+];

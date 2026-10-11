@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Laratrust\Models\Role;
+use App\Models\Merchant;
 use Tests\TestCase;
 
 class WebAuthenticationTest extends TestCase
@@ -72,15 +73,26 @@ class WebAuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
+
     public function test_authenticated_user_can_access_dashboard(): void
     {
         $user = $this->userWithRole('merchant');
 
+        Merchant::create([
+            'user_id' => $user->id,
+            'business_name' => 'DeliveryHub Test Merchant',
+            'business_email' => 'merchant@example.com',
+            'status' => 'active',
+        ]);
+
         $this->actingAs($user)
             ->get('/dashboard')
             ->assertOk()
-            ->assertSee($user->name);
+            ->assertSee($user->name)
+            ->assertSee('Total Deliveries')
+            ->assertSee('Recent Deliveries');
     }
+
 
     public function test_user_without_role_cannot_access_dashboard(): void
     {

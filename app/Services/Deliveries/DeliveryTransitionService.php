@@ -3,6 +3,7 @@
 namespace App\Services\Deliveries;
 
 use App\Enums\DeliveryStatus;
+use App\Events\DeliveryStatusChanged;
 use App\Models\Delivery;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -50,13 +51,20 @@ class DeliveryTransitionService
 
             $delivery->save();
 
-            $delivery->statusHistories()->create([
+            $history = $delivery->statusHistories()->create([
                 'user_id' => $actor->id,
                 'from_status' => $from->value,
                 'to_status' => $to->value,
                 'reason' => $reason,
                 'metadata' => $metadata,
             ]);
+
+            DB::afterCommit(function () use ($delivery, $history) {
+                event(new DeliveryStatusChanged(
+                    $delivery,
+                    $history
+                ));
+            });
 
             return $delivery->refresh();
         });

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\DeliveryTrackingController;
 use App\Http\Controllers\Api\V1\ProofOfDeliveryViewController;
 use App\Http\Controllers\Api\V1\ProofOfDeliveryController;
@@ -108,4 +109,28 @@ Route::prefix('v1')->group(function () {
             [ProofOfDeliveryController::class, 'store']
         )
         ->name('driver.deliveries.proof');
+
+    Route::middleware('auth:sanctum')
+        ->prefix('notifications')
+        ->group(function () {
+            Route::get('/', [
+                NotificationController::class,
+                'index'
+            ]);
+
+            Route::get('/unread-count', [
+                NotificationController::class,
+                'unreadCount'
+            ]);
+
+            Route::patch('/{id}/read', [
+                NotificationController::class,
+                'markAsRead'
+            ]);
+
+            Route::post('/read-all', [
+                NotificationController::class,
+                'markAllAsRead'
+            ]);
+        });
 });

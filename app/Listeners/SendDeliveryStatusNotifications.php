@@ -18,6 +18,10 @@ class SendDeliveryStatusNotifications
     public function handle(DeliveryStatusChanged $event): void
     {
         $status = $event->history->to_status;
+
+        if ($status instanceof DeliveryStatus) {
+            $status = $status->value;
+        }
         if (! in_array($status, [
             DeliveryStatus::Assigned->value,
             DeliveryStatus::Accepted->value,

@@ -44,6 +44,11 @@ Route::middleware('auth')->group(function () {
         [MerchantDeliveryController::class, 'index']
     )->name('merchant.deliveries.index');
 
+    Route::get('/merchant/deliveries/{delivery}', [
+        \App\Http\Controllers\Web\MerchantDeliveryController::class,
+        'show',
+    ])->name('merchant.deliveries.show');
+
     Route::get(
         '/merchant/deliveries/create',
         [MerchantDeliveryCreationController::class, 'create']

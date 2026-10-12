@@ -4,11 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Enums\DeliveryStatus;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Delivery extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'merchant_id',
         'pickup_address_id',

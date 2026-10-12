@@ -208,7 +208,10 @@
 
                                 <td class="px-6 py-4">
                                     <span dir="ltr" class="inline-block font-mono text-sm font-semibold text-blue-400">
-                                        {{ $delivery->tracking_number }}
+                                        <a href="{{ route('merchant.deliveries.show', $delivery) }}" dir="ltr"
+                                            class="inline-block font-mono font-semibold text-blue-400 transition hover:text-blue-300 hover:underline">
+                                            {{ $delivery->tracking_number }}
+                                        </a>
                                     </span>
                                 </td>
 

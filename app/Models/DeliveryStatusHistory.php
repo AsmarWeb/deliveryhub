@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DeliveryStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -19,6 +20,8 @@ class DeliveryStatusHistory extends Model
     protected function casts(): array
     {
         return [
+            'from_status' => DeliveryStatus::class,
+            'to_status' => DeliveryStatus::class,
             'metadata' => 'array',
         ];
     }

@@ -57,4 +57,36 @@ class MerchantDeliveryController extends Controller
             'statuses' => DeliveryStatus::cases(),
         ]);
     }
+
+
+    public function show(Request $request, Delivery $delivery): View
+    {
+        abort_unless(
+            $request->user()->hasRole('merchant'),
+            403
+        );
+
+        $merchant = Merchant::query()
+            ->where('user_id', $request->user()->id)
+            ->firstOrFail();
+
+        // Prevent merchants from viewing another merchant's delivery.
+        abort_unless(
+            (int) $delivery->merchant_id === (int) $merchant->id,
+            404
+        );
+
+        $delivery->load([
+            'pickupAddress',
+            'dropoffAddress',
+            'statusHistories' => fn($query) => $query
+                ->with('actor')
+                ->orderBy('created_at')
+                ->orderBy('id'),
+        ]);
+
+        return view('merchant.deliveries.show', [
+            'delivery' => $delivery,
+        ]);
+    }
 }

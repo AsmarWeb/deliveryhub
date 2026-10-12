@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Web\Admin\AdminDeliveryController;
+use App\Http\Controllers\Web\Admin\AdminDeliveryCompletionController;
+
 use App\Http\Controllers\Auth\WebAuthController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\MerchantDeliveryController;
@@ -9,6 +12,7 @@ use App\Http\Controllers\Web\DriverAssignmentController;
 use App\Http\Controllers\Web\DriverDeliveryController;
 use App\Http\Controllers\Web\DriverProofOfDeliveryController;
 use App\Http\Controllers\Web\MerchantProofOfDeliveryController;
+use App\Http\Controllers\Web\Admin\AdminProofOfDeliveryController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/language/{locale}', function (string $locale) {
@@ -133,4 +137,35 @@ Route::middleware('auth')->group(function () {
         ->whereNumber('delivery')
         ->where('type', 'photo|signature')
         ->name('merchant.deliveries.proof.file');
+
+
+    Route::prefix('admin')
+        ->name('admin.')
+        ->group(function () {
+            Route::get('/deliveries', [
+                AdminDeliveryController::class,
+                'index',
+            ])->name('deliveries.index');
+
+            Route::get('/deliveries/{delivery}', [
+                AdminDeliveryController::class,
+                'show',
+            ])->whereNumber('delivery')
+                ->name('deliveries.show');
+
+            Route::post('/deliveries/{delivery}/complete', [
+                AdminDeliveryCompletionController::class,
+                '__invoke',
+            ])->whereNumber('delivery')
+                ->name('deliveries.complete');
+        });
+
+
+    Route::get(
+        '/admin/deliveries/{delivery}/proof/{type}',
+        [AdminProofOfDeliveryController::class, 'file']
+    )
+        ->whereNumber('delivery')
+        ->where('type', 'photo|signature')
+        ->name('admin.deliveries.proof.file');
 });

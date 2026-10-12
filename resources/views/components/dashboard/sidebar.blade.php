@@ -14,6 +14,14 @@
             'icon' => 'home',
         ],
     ];
+    if ($role === 'admin') {
+        $items[] = [
+            'route' => 'admin.deliveries.index',
+            'active' => 'admin.deliveries.*',
+            'label' => app()->getLocale() === 'ar' ? 'إدارة الشحنات' : 'Manage Deliveries',
+            'icon' => 'package',
+        ];
+    }
     if ($role === 'merchant') {
         $items[] = [
             'route' => 'merchant.deliveries.index',
@@ -45,7 +53,7 @@
     $items = array_values(array_filter($items, fn($item) => Route::has($item['route'])));
 
     $upcoming = match ($role) {
-        'admin' => [__('dashboard.deliveries'), __('dashboard.merchants'), __('dashboard.drivers')],
+        'admin' => [__('dashboard.merchants'), __('dashboard.drivers')],
         'merchant' => [],
         'driver' => [__('dashboard.delivery_history')],
         default => [],

@@ -26,7 +26,7 @@ class ProofOfDeliveryAccessService
 
             abort_unless(
                 $merchant !== null
-                && (int) $delivery->merchant_id === (int) $merchant->id,
+                    && (int) $delivery->merchant_id === (int) $merchant->id,
                 403
             );
 
@@ -86,8 +86,8 @@ class ProofOfDeliveryAccessService
 
         abort_unless(
             str_starts_with($path, $prefix)
-            && !str_contains($path, '..')
-            && !str_contains($path, '\\'),
+                && !str_contains($path, '..')
+                && !str_contains($path, '\\'),
             404
         );
 
@@ -95,12 +95,16 @@ class ProofOfDeliveryAccessService
 
         abort_unless($disk->exists($path), 404);
 
-        return response()->file($disk->path($path), [
+
+        $response = response()->file($disk->path($path), [
             'Content-Type' => $disk->mimeType($path)
                 ?: 'application/octet-stream',
             'Content-Disposition' => 'inline',
-            'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',
         ]);
+
+        $response->headers->set('Cache-Control', 'private, no-store');
+
+        return $response;
     }
 }

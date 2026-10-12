@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\WebAuthController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\MerchantDeliveryController;
 use App\Http\Controllers\Web\MerchantDeliveryCreationController;
+use App\Http\Controllers\Web\MerchantAddressController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/language/{locale}', function (string $locale) {
@@ -44,11 +45,6 @@ Route::middleware('auth')->group(function () {
         [MerchantDeliveryController::class, 'index']
     )->name('merchant.deliveries.index');
 
-    Route::get('/merchant/deliveries/{delivery}', [
-        \App\Http\Controllers\Web\MerchantDeliveryController::class,
-        'show',
-    ])->name('merchant.deliveries.show');
-
     Route::get(
         '/merchant/deliveries/create',
         [MerchantDeliveryCreationController::class, 'create']
@@ -58,4 +54,25 @@ Route::middleware('auth')->group(function () {
         '/merchant/deliveries',
         [MerchantDeliveryCreationController::class, 'store']
     )->name('merchant.deliveries.store');
+
+    Route::get('/merchant/deliveries/{delivery}', [
+        \App\Http\Controllers\Web\MerchantDeliveryController::class,
+        'show',
+    ])->name('merchant.deliveries.show');
+
+
+    Route::prefix('merchant/addresses')
+        ->name('merchant.addresses.')
+        ->controller(MerchantAddressController::class)
+        ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{address}/edit', 'edit')
+                ->whereNumber('address')->name('edit');
+            Route::put('/{address}', 'update')
+                ->whereNumber('address')->name('update');
+            Route::delete('/{address}', 'destroy')
+                ->whereNumber('address')->name('destroy');
+        });
 });

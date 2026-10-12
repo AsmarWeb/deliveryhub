@@ -17,7 +17,7 @@
     if ($role === 'merchant') {
         $items[] = [
             'route' => 'merchant.deliveries.index',
-            'active' => 'merchant.deliveries.*',
+            'active' => 'merchant.deliveries.index',
             'label' => __('dashboard.my_deliveries'),
             'icon' => 'package',
         ];
@@ -27,11 +27,17 @@
             'label' => __('dashboard.create_delivery'),
             'icon' => 'plus',
         ];
+        $items[] = [
+            'route' => 'merchant.addresses.index',
+            'active' => 'merchant.addresses.*',
+            'label' => __('dashboard.my_addresses'),
+            'icon' => 'map-pin',
+        ];
     }
     $items = array_values(array_filter($items, fn($item) => Route::has($item['route'])));
     $upcoming = match ($role) {
         'admin' => [__('dashboard.deliveries'), __('dashboard.merchants'), __('dashboard.drivers')],
-        'merchant' => [__('dashboard.my_addresses')],
+        'merchant' => [],
         'driver' => [__('dashboard.my_assignments'), __('dashboard.delivery_history')],
         default => [],
     };
@@ -75,6 +81,14 @@
                         @case('plus')
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                                 <path stroke-linecap="round" d="M12 5v14M5 12h14" />
+                            </svg>
+                        @break
+
+                        @case('map-pin')
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
+                                <circle cx="12" cy="10" r="2.5" />
                             </svg>
                         @break
                     @endswitch

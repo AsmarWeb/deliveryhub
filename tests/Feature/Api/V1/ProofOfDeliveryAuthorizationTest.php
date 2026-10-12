@@ -93,18 +93,24 @@ class ProofOfDeliveryAuthorizationTest extends TestCase
             'accepted_at' => now(),
         ]);
 
-        Storage::fake('local');
-        Storage::disk('local')->put('proof-of-deliveries/test/photo.png', 'test photo content');
-        Storage::disk('local')->put('proof-of-deliveries/test/signature.png', 'test signature content');
+        
+Storage::fake('local');
 
-        ProofOfDelivery::create([
-            'delivery_id' => $this->delivery->id,
-            'driver_id' => $driver->id,
-            'recipient_name' => 'Test Recipient',
-            'photo_path' => 'proof-of-deliveries/test/photo.png',
-            'signature_path' => 'proof-of-deliveries/test/signature.png',
-            'confirmed_at' => now(),
-        ]);
+$photoPath = "proof-of-deliveries/{$this->delivery->id}/photos/photo.png";
+$signaturePath = "proof-of-deliveries/{$this->delivery->id}/signatures/signature.png";
+
+Storage::disk('local')->put($photoPath, 'test photo content');
+Storage::disk('local')->put($signaturePath, 'test signature content');
+
+ProofOfDelivery::create([
+    'delivery_id' => $this->delivery->id,
+    'driver_id' => $driver->id,
+    'recipient_name' => 'Test Recipient',
+    'photo_path' => $photoPath,
+    'signature_path' => $signaturePath,
+    'confirmed_at' => now(),
+]);
+
     }
 
 

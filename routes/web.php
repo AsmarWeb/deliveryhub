@@ -5,6 +5,10 @@ use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\MerchantDeliveryController;
 use App\Http\Controllers\Web\MerchantDeliveryCreationController;
 use App\Http\Controllers\Web\MerchantAddressController;
+use App\Http\Controllers\Web\DriverAssignmentController;
+use App\Http\Controllers\Web\DriverDeliveryController;
+use App\Http\Controllers\Web\DriverProofOfDeliveryController;
+use App\Http\Controllers\Web\MerchantProofOfDeliveryController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/language/{locale}', function (string $locale) {
@@ -75,4 +79,58 @@ Route::middleware('auth')->group(function () {
             Route::delete('/{address}', 'destroy')
                 ->whereNumber('address')->name('destroy');
         });
+
+
+    Route::prefix('driver/assignments')
+        ->name('driver.assignments.')
+        ->controller(DriverAssignmentController::class)
+        ->group(function () {
+            Route::get('/', 'index')->name('index');
+
+            Route::get('/{assignment}', 'show')
+                ->whereNumber('assignment')
+                ->name('show');
+
+            Route::post('/{assignment}/accept', 'accept')
+                ->whereNumber('assignment')
+                ->name('accept');
+
+            Route::post('/{assignment}/reject', 'reject')
+                ->whereNumber('assignment')
+                ->name('reject');
+        });
+
+    Route::prefix('driver/assignments')
+        ->name('driver.assignments.')
+        ->controller(DriverDeliveryController::class)
+        ->group(function () {
+            Route::post('/{assignment}/pickup', 'pickup')
+                ->whereNumber('assignment')
+                ->name('pickup');
+
+            Route::post('/{assignment}/start-transit', 'startTransit')
+                ->whereNumber('assignment')
+                ->name('start-transit');
+        });
+
+    Route::prefix('driver/assignments')
+        ->name('driver.assignments.')
+        ->controller(DriverProofOfDeliveryController::class)
+        ->group(function () {
+            Route::get('/{assignment}/proof', 'create')
+                ->whereNumber('assignment')
+                ->name('proof.create');
+
+            Route::post('/{assignment}/proof', 'store')
+                ->whereNumber('assignment')
+                ->name('proof.store');
+        });
+
+    Route::get(
+        '/merchant/deliveries/{delivery}/proof/{type}',
+        [MerchantProofOfDeliveryController::class, 'file']
+    )
+        ->whereNumber('delivery')
+        ->where('type', 'photo|signature')
+        ->name('merchant.deliveries.proof.file');
 });

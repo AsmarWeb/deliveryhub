@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Enums\DeliveryStatus;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -65,5 +66,10 @@ class Delivery extends Model
     public function statusHistories(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(DeliveryStatusHistory::class);
+    }
+
+    public function proofOfDelivery(): HasOne
+    {
+        return $this->hasOne(ProofOfDelivery::class);
     }
 }

@@ -408,6 +408,85 @@
             </section>
 
 
+            @if ($delivery->proofOfDelivery)
+                @php
+                    $proof = $delivery->proofOfDelivery;
+                    $ar = app()->getLocale() === 'ar';
+                @endphp
+
+                <section class="rounded-2xl border border-emerald-900/60 bg-slate-900 p-5 sm:p-6">
+                    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+                        <h3 class="text-lg font-semibold text-white">
+                            {{ $ar ? 'إثبات التسليم' : 'Proof of Delivery' }}
+                        </h3>
+
+                        <span class="rounded-full bg-emerald-500/10 px-3 py-1 text-sm text-emerald-400">
+                            {{ $ar ? 'تم تأكيد التسليم' : 'Delivery Confirmed' }}
+                        </span>
+                    </div>
+
+                    <dl class="grid gap-5 sm:grid-cols-2">
+                        <div>
+                            <dt class="text-xs text-slate-400">
+                                {{ $ar ? 'اسم المستلم' : 'Recipient Name' }}
+                            </dt>
+                            <dd class="mt-2 font-medium text-white">
+                                {{ $proof->recipient_name }}
+                            </dd>
+                        </div>
+
+                        <div>
+                            <dt class="text-xs text-slate-400">
+                                {{ $ar ? 'تاريخ التأكيد' : 'Confirmed At' }}
+                            </dt>
+                            <dd class="mt-2 text-white">
+                                {{ $formatDate($proof->confirmed_at) }}
+                            </dd>
+                        </div>
+                    </dl>
+
+                    @if ($proof->notes)
+                        <div class="mt-5">
+                            <p class="text-xs text-slate-400">
+                                {{ $ar ? 'ملاحظات التسليم' : 'Delivery Notes' }}
+                            </p>
+                            <p class="mt-2 whitespace-pre-line break-words text-sm text-slate-200">
+                                {{ $proof->notes }}
+                            </p>
+                        </div>
+                    @endif
+
+                    @if ($proof->photo_path || $proof->signature_path)
+                        <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                            @foreach (['photo', 'signature'] as $type)
+                                @php
+                                    $path = $type === 'photo' ? $proof->photo_path : $proof->signature_path;
+                                @endphp
+
+                                @if ($path)
+                                    <a href="{{ route('merchant.deliveries.proof.file', [$delivery, $type]) }}"
+                                        target="_blank" rel="noopener noreferrer"
+                                        class="rounded-xl border border-slate-700 bg-slate-800 p-5 transition hover:border-blue-500">
+                                        <span class="block font-semibold text-white">
+                                            @if ($type === 'photo')
+                                                {{ $ar ? 'عرض صورة التسليم' : 'View Delivery Photo' }}
+                                            @else
+                                                {{ $ar ? 'عرض توقيع المستلم' : 'View Recipient Signature' }}
+                                            @endif
+                                        </span>
+
+                                        <span class="mt-2 block text-xs text-slate-400">
+                                            {{ $ar ? 'فتح الملف المحمي' : 'Open protected file' }}
+                                        </span>
+                                    </a>
+                                @endif
+                            @endforeach
+                        </div>
+                    @endif
+                </section>
+            @endif
+
+
         </div>
 
     </div>

@@ -34,13 +34,23 @@
             'icon' => 'map-pin',
         ];
     }
+    if ($role === 'driver') {
+        $items[] = [
+            'route' => 'driver.assignments.index',
+            'active' => 'driver.assignments.*',
+            'label' => __('dashboard.my_assignments'),
+            'icon' => 'truck',
+        ];
+    }
     $items = array_values(array_filter($items, fn($item) => Route::has($item['route'])));
+
     $upcoming = match ($role) {
         'admin' => [__('dashboard.deliveries'), __('dashboard.merchants'), __('dashboard.drivers')],
         'merchant' => [],
-        'driver' => [__('dashboard.my_assignments'), __('dashboard.delivery_history')],
+        'driver' => [__('dashboard.delivery_history')],
         default => [],
     };
+
 @endphp
 
 <div id="sidebar-overlay" class="sidebar-overlay" hidden></div>
@@ -89,6 +99,14 @@
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
                                 <circle cx="12" cy="10" r="2.5" />
+                            </svg>
+                        @break
+
+                        @case('truck')
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 5h12v12H3zM15 9h4l3 4v4h-7z" />
+                                <circle cx="7.5" cy="18" r="2" />
+                                <circle cx="18.5" cy="18" r="2" />
                             </svg>
                         @break
                     @endswitch

@@ -79,6 +79,7 @@ class MerchantDeliveryController extends Controller
         $delivery->load([
             'pickupAddress',
             'dropoffAddress',
+            'proofOfDelivery',
             'statusHistories' => fn($query) => $query
                 ->with('actor')
                 ->orderBy('created_at')

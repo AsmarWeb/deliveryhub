@@ -4,7 +4,6 @@ namespace App\Services\Dashboard;
 
 use App\Enums\DeliveryStatus;
 use App\Models\Delivery;
-use App\Models\DeliveryAssignment;
 use App\Models\DeliveryStatusHistory;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -77,11 +76,6 @@ class AdminAnalyticsService
 
         // Attribute a completed delivery to its latest
         // accepted assignment, if one exists.
-        $latestAcceptedAssignments = DeliveryAssignment::query()
-            ->select('delivery_id')
-            ->selectRaw('MAX(id) as assignment_id')
-            ->where('status', 'accepted')
-            ->groupBy('delivery_id');
 
         $driverPerformance = DB::query()
             ->fromSub($firstCompletions, 'completions')
@@ -91,28 +85,17 @@ class AdminAnalyticsService
                 '=',
                 'completions.delivery_id'
             )
-            ->joinSub(
-                $latestAcceptedAssignments,
-                'latest_assignments',
-                function ($join) {
-                    $join->on(
-                        'latest_assignments.delivery_id',
-                        '=',
-                        'deliveries.id'
-                    );
-                }
-            )
             ->join(
-                'delivery_assignments',
-                'delivery_assignments.id',
+                'proof_of_deliveries',
+                'proof_of_deliveries.delivery_id',
                 '=',
-                'latest_assignments.assignment_id'
+                'deliveries.id'
             )
             ->join(
                 'drivers',
                 'drivers.id',
                 '=',
-                'delivery_assignments.driver_id'
+                'proof_of_deliveries.driver_id'
             )
             ->join(
                 'users',
@@ -136,6 +119,7 @@ class AdminAnalyticsService
             ->orderByDesc('completed_deliveries')
             ->limit(10)
             ->get();
+
 
         return [
             'days' => $days,

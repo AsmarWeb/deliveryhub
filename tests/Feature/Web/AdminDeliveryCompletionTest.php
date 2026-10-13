@@ -7,6 +7,7 @@ use App\Models\Delivery;
 use App\Models\DeliveryAssignment;
 use App\Models\Driver;
 use App\Models\User;
+use App\Models\ProofOfDelivery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laratrust\Models\Role;
 use Tests\TestCase;
@@ -57,6 +58,13 @@ class AdminDeliveryCompletionTest extends TestCase
             'status' => 'accepted',
             'assigned_at' => now(),
             'accepted_at' => now(),
+        ]);
+
+        ProofOfDelivery::create([
+            'delivery_id' => $this->delivery->id,
+            'driver_id' => $this->driver->id,
+            'recipient_name' => 'Test Recipient',
+            'confirmed_at' => now(),
         ]);
     }
 
@@ -168,6 +176,84 @@ class AdminDeliveryCompletionTest extends TestCase
             $this->delivery->statusHistories()
                 ->where('to_status', 'completed')
                 ->count()
+        );
+    }
+
+
+    public function test_admin_cannot_complete_without_proof(): void
+    {
+        ProofOfDelivery::query()
+            ->where('delivery_id', $this->delivery->id)
+            ->delete();
+
+        $this->actingAs($this->admin)
+            ->from(route('admin.deliveries.show', $this->delivery))
+            ->post($this->url())
+            ->assertSessionHasErrors('proof');
+
+        $this->assertSame(
+            DeliveryStatus::Delivered,
+            $this->delivery->fresh()->status
+        );
+
+        $this->assertFalse(
+            (bool) $this->driver->fresh()->is_available
+        );
+    }
+
+    public function test_admin_cannot_complete_when_proof_driver_differs(): void
+    {
+        $anotherDriver = Driver::create([
+            'user_id' => User::factory()->create()->id,
+            'phone' => '0503333333',
+            'status' => 'active',
+            'is_available' => false,
+        ]);
+
+        ProofOfDelivery::query()
+            ->where('delivery_id', $this->delivery->id)
+            ->update([
+                'driver_id' => $anotherDriver->id,
+            ]);
+
+        $this->actingAs($this->admin)
+            ->from(route('admin.deliveries.show', $this->delivery))
+            ->post($this->url())
+            ->assertSessionHasErrors('assignment');
+
+        $this->assertSame(
+            DeliveryStatus::Delivered,
+            $this->delivery->fresh()->status
+        );
+
+        $this->assertFalse(
+            (bool) $this->driver->fresh()->is_available
+        );
+
+        $this->assertFalse(
+            (bool) $anotherDriver->fresh()->is_available
+        );
+    }
+
+    public function test_failed_completion_does_not_create_completion_history(): void
+    {
+        ProofOfDelivery::query()
+            ->where('delivery_id', $this->delivery->id)
+            ->delete();
+
+        $this->actingAs($this->admin)
+            ->from(route('admin.deliveries.show', $this->delivery))
+            ->post($this->url())
+            ->assertSessionHasErrors('proof');
+
+        $this->assertDatabaseMissing('delivery_status_histories', [
+            'delivery_id' => $this->delivery->id,
+            'to_status' => DeliveryStatus::Completed->value,
+        ]);
+
+        $this->assertSame(
+            DeliveryStatus::Delivered,
+            $this->delivery->fresh()->status
         );
     }
 }

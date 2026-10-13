@@ -6,6 +6,7 @@ use App\Enums\DeliveryStatus;
 use App\Models\Delivery;
 use App\Models\DeliveryAssignment;
 use App\Models\Driver;
+use App\Models\ProofOfDelivery;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -31,21 +32,35 @@ class DeliveryCompletionService
                 ]);
             }
 
+            // The proof identifies the driver who confirmed delivery.
+            $proof = ProofOfDelivery::query()
+                ->where('delivery_id', $lockedDelivery->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $proof) {
+                throw ValidationException::withMessages([
+                    'proof' => 'Proof of delivery is required before completion.',
+                ]);
+            }
+
+            // Require an accepted assignment belonging to that driver.
             $assignment = DeliveryAssignment::query()
                 ->where('delivery_id', $lockedDelivery->id)
+                ->where('driver_id', $proof->driver_id)
                 ->where('status', 'accepted')
                 ->lockForUpdate()
                 ->first();
 
-            if (!$assignment) {
+            if (! $assignment) {
                 throw ValidationException::withMessages([
-                    'assignment' => 'Accepted assignment not found.',
+                    'assignment' => 'Accepted assignment does not match proof of delivery.',
                 ]);
             }
 
             $driver = Driver::query()
                 ->lockForUpdate()
-                ->findOrFail($assignment->driver_id);
+                ->findOrFail($proof->driver_id);
 
             $completed = $this->transitions->transition(
                 $lockedDelivery,

@@ -78,6 +78,113 @@
             @endforeach
         </section>
 
+
+        <section class="space-y-6">
+
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-xl font-bold text-white">
+                        {{ $ar ? 'تحليلات الشحنات' : 'Delivery Analytics' }}
+                    </h3>
+                    <p class="mt-1 text-sm text-slate-400">
+                        {{ $ar ? 'تحليل الأداء حسب الفترة الزمنية' : 'Performance analysis by date range' }}
+                    </p>
+                </div>
+
+                <form method="GET" action="{{ route('admin.dashboard') }}">
+                    <select name="days" onchange="this.form.submit()"
+                        aria-label="{{ $ar ? 'الفترة الزمنية' : 'Date range' }}"
+                        class="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white">
+                        @foreach ([7, 30, 90] as $days)
+                            <option value="{{ $days }}" @selected($analytics['days'] === $days)>
+                                {{ $ar ? "آخر {$days} يوم" : "Last {$days} days" }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <noscript>
+                        <button type="submit" class="rounded-lg bg-blue-600 px-3 py-2 text-white">
+                            {{ $ar ? 'تطبيق' : 'Apply' }}
+                        </button>
+                    </noscript>
+                </form>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-3">
+                @foreach ([[$ar ? 'شحنات جديدة' : 'New Deliveries', $analytics['total']], [$ar ? 'شحنات مكتملة' : 'Completed Deliveries', $analytics['completed']], [$ar ? 'نسبة الإكمال' : 'Completion Rate', $analytics['success_rate'] . '%']] as [$label, $value])
+                    <div class="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+                        <p class="text-sm text-slate-400">{{ $label }}</p>
+                        <p class="mt-3 text-3xl font-bold text-white">{{ $value }}</p>
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+                <h4 class="mb-6 text-lg font-semibold text-white">
+                    {{ $ar ? 'اتجاه الشحنات اليومية' : 'Daily Delivery Trends' }}
+                </h4>
+
+                @php
+                    $trends = $analytics['trends'];
+                    $maxValue = max(
+                        1,
+                        ...array_merge(array_column($trends, 'created'), array_column($trends, 'completed')),
+                    );
+                @endphp
+
+                <div class="mb-4 flex flex-wrap gap-5 text-xs text-slate-400">
+                    <span><span class="text-blue-400">●</span>
+                        {{ $ar ? 'المنشأة' : 'Created' }}</span>
+                    <span><span class="text-emerald-400">●</span>
+                        {{ $ar ? 'أحداث الإكمال المسجلة' : 'Recorded Completions' }}</span>
+                </div>
+
+                <div class="flex h-48 items-end gap-1 overflow-x-auto pb-2" role="img"
+                    aria-label="{{ $ar ? 'مخطط الشحنات اليومية' : 'Daily delivery chart' }}">
+                    @foreach ($trends as $day)
+                        <div class="flex h-full min-w-2 flex-1 items-end gap-px"
+                            title="{{ $day['date'] }}: {{ $day['created'] }} created, {{ $day['completed'] }} completed">
+                            <div class="w-1/2 rounded-t bg-blue-500"
+                                style="height: {{ ($day['created'] / $maxValue) * 100 }}%"></div>
+                            <div class="w-1/2 rounded-t bg-emerald-500"
+                                style="height: {{ ($day['completed'] / $maxValue) * 100 }}%"></div>
+                        </div>
+                    @endforeach
+                </div>
+
+                <p class="mt-3 text-xs text-slate-500">
+                    {{ $ar
+                        ? 'يعتمد الإكمال على أول انتقال مسجل إلى الحالة المكتملة.'
+                        : 'Completions use the first recorded transition to completed.' }}
+                </p>
+            </div>
+
+            <div class="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+                <h4 class="mb-5 text-lg font-semibold text-white">
+                    {{ $ar ? 'أداء السائقين' : 'Driver Performance' }}
+                </h4>
+
+                <div class="space-y-4">
+                    @forelse ($analytics['driver_performance'] as $driver)
+                        <div class="flex items-center justify-between gap-4 border-b border-slate-800 pb-3">
+                            <span class="text-sm font-medium text-white">
+                                {{ $driver->name }}
+                            </span>
+                            <span class="text-sm text-emerald-400">
+                                {{ $driver->completed_deliveries }}
+                                {{ $ar ? 'شحنة مكتملة' : 'completed' }}
+                            </span>
+                        </div>
+                    @empty
+                        <p class="text-sm text-slate-400">
+                            {{ $ar ? 'لا توجد بيانات للسائقين خلال الفترة' : 'No driver performance data for this period' }}
+                        </p>
+                    @endforelse
+                </div>
+            </div>
+
+        </section>
+
+
         <section class="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h3 class="mb-6 text-lg font-semibold text-white">
                 {{ $ar ? 'توزيع حالات الشحنات' : 'Delivery Status Distribution' }}

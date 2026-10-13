@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Web\Admin\AdminDeliveryController;
 use App\Http\Controllers\Web\Admin\AdminDeliveryCompletionController;
+use App\Http\Controllers\Web\Admin\AdminProofOfDeliveryController;
+use App\Http\Controllers\Web\Admin\AdminDashboardController;
 
 use App\Http\Controllers\Auth\WebAuthController;
 use App\Http\Controllers\Web\DashboardController;
@@ -12,7 +14,6 @@ use App\Http\Controllers\Web\DriverAssignmentController;
 use App\Http\Controllers\Web\DriverDeliveryController;
 use App\Http\Controllers\Web\DriverProofOfDeliveryController;
 use App\Http\Controllers\Web\MerchantProofOfDeliveryController;
-use App\Http\Controllers\Web\Admin\AdminProofOfDeliveryController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/language/{locale}', function (string $locale) {
@@ -36,6 +37,15 @@ Route::middleware('guest')->group(function () {
         'login'
     ])->name('login.store');
 });
+
+
+Route::get(
+    '/admin/dashboard',
+    AdminDashboardController::class
+)
+    ->middleware('auth')
+    ->name('admin.dashboard');
+
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [

@@ -4,6 +4,7 @@ use App\Http\Controllers\Web\Admin\AdminDeliveryController;
 use App\Http\Controllers\Web\Admin\AdminDeliveryCompletionController;
 use App\Http\Controllers\Web\Admin\AdminProofOfDeliveryController;
 use App\Http\Controllers\Web\Admin\AdminDashboardController;
+use App\Http\Controllers\Web\Admin\AdminDriverController;
 
 use App\Http\Controllers\Auth\WebAuthController;
 use App\Http\Controllers\Web\DashboardController;
@@ -168,6 +169,17 @@ Route::middleware('auth')->group(function () {
                 '__invoke',
             ])->whereNumber('delivery')
                 ->name('deliveries.complete');
+
+            Route::get('/drivers', [
+                AdminDriverController::class,
+                'index',
+            ])->name('drivers.index');
+
+            Route::patch('/drivers/{driver}/status', [
+                AdminDriverController::class,
+                'updateStatus',
+            ])->whereNumber('driver')
+                ->name('drivers.status');
         });
 
 

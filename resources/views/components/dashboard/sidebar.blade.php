@@ -1,40 +1,54 @@
 @php
     $user = auth()->user();
+    $locale = app()->getLocale();
+
     $role = match (true) {
         $user->hasRole('admin') => 'admin',
         $user->hasRole('merchant') => 'merchant',
         $user->hasRole('driver') => 'driver',
         default => null,
     };
-    $items = [
-        [
+
+    $items = [];
+
+    if ($role === 'admin') {
+        $items[] = [
+            'route' => 'admin.dashboard',
+            'active' => 'admin.dashboard',
+            'label' => $locale === 'ar' ? 'لوحة الإدارة' : 'Admin Overview',
+            'icon' => 'home',
+        ];
+
+        $items[] = [
+            'route' => 'admin.deliveries.index',
+            'active' => 'admin.deliveries.*',
+            'label' => $locale === 'ar' ? 'إدارة الشحنات' : 'Manage Deliveries',
+            'icon' => 'package',
+        ];
+    }
+
+    if ($role === 'merchant') {
+        $items[] = [
             'route' => 'web.dashboard',
             'active' => 'web.dashboard',
             'label' => __('dashboard.dashboard'),
             'icon' => 'home',
-        ],
-    ];
-    if ($role === 'admin') {
-        $items[] = [
-            'route' => 'admin.deliveries.index',
-            'active' => 'admin.deliveries.*',
-            'label' => app()->getLocale() === 'ar' ? 'إدارة الشحنات' : 'Manage Deliveries',
-            'icon' => 'package',
         ];
-    }
-    if ($role === 'merchant') {
+
         $items[] = [
             'route' => 'merchant.deliveries.index',
             'active' => 'merchant.deliveries.index',
             'label' => __('dashboard.my_deliveries'),
             'icon' => 'package',
         ];
+
         $items[] = [
             'route' => 'merchant.deliveries.create',
             'active' => 'merchant.deliveries.create',
             'label' => __('dashboard.create_delivery'),
             'icon' => 'plus',
         ];
+
         $items[] = [
             'route' => 'merchant.addresses.index',
             'active' => 'merchant.addresses.*',
@@ -42,7 +56,15 @@
             'icon' => 'map-pin',
         ];
     }
+
     if ($role === 'driver') {
+        $items[] = [
+            'route' => 'web.dashboard',
+            'active' => 'web.dashboard',
+            'label' => __('dashboard.dashboard'),
+            'icon' => 'home',
+        ];
+
         $items[] = [
             'route' => 'driver.assignments.index',
             'active' => 'driver.assignments.*',
@@ -50,6 +72,7 @@
             'icon' => 'truck',
         ];
     }
+
     $items = array_values(array_filter($items, fn($item) => Route::has($item['route'])));
 
     $upcoming = match ($role) {
@@ -59,12 +82,14 @@
         default => [],
     };
 
+    $homeRoute = $role === 'admin' ? 'admin.dashboard' : 'web.dashboard';
 @endphp
+
 
 <div id="sidebar-overlay" class="sidebar-overlay" hidden></div>
 <aside id="dashboard-sidebar" class="dh-sidebar" aria-label="{{ __('dashboard.dashboard') }}">
     <div class="dh-sidebar-brand">
-        <a href="{{ route('web.dashboard') }}" class="dh-brand-link" title="DeliveryHub">
+        <a href="{{ route($homeRoute) }}" class="dh-brand-link" title="DeliveryHub">
             <span class="dh-logo">D</span>
             <span class="dh-label dh-brand-name">Delivery<span>Hub</span></span>
         </a>

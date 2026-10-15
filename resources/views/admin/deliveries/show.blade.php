@@ -46,7 +46,7 @@
 
         @if (session('success'))
             <div role="status" class="rounded-xl border border-emerald-700 bg-emerald-950 p-4 text-emerald-200">
-                {{ $ar ? 'تم إكمال الشحنة بنجاح.' : session('success') }}
+                {{ session('success') }}
             </div>
         @endif
 
@@ -160,6 +160,76 @@
                 @endforelse
             </section>
         </div>
+
+
+        {{-- Admin Dispatch Panel --}}
+
+        @if ($status === 'pending_pricing')
+            <section class="rounded-2xl border border-blue-800 bg-slate-900 p-6">
+                <h2 class="mb-4 text-lg font-bold text-white">
+                    {{ $ar ? 'تسعير طلب التوصيل' : 'Delivery Pricing' }}
+                </h2>
+
+                <form method="POST" action="{{ route('admin.deliveries.price', $delivery) }}" class="space-y-4">
+                    @csrf
+
+                    <label class="block text-sm text-slate-300">
+                        {{ $ar ? 'رسوم التوصيل' : 'Delivery Fee' }}
+                    </label>
+
+                    <input type="number" name="delivery_fee" min="0" step="0.01" required
+                        value="{{ old('delivery_fee') }}"
+                        class="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white">
+
+                    <button type="submit" class="rounded-xl bg-blue-600 px-6 py-3 font-bold text-white hover:bg-blue-500">
+                        {{ $ar ? 'اعتماد التسعير' : 'Approve Pricing' }}
+                    </button>
+                </form>
+            </section>
+        @endif
+
+        @if (in_array($status, ['priced', 'matching'], true))
+            <section class="rounded-2xl border border-emerald-800 bg-slate-900 p-6">
+                <h2 class="mb-4 text-lg font-bold text-white">
+                    {{ $ar ? 'إسناد الطلب إلى سائق' : 'Assign Driver' }}
+                </h2>
+
+                @if ($availableDrivers->isEmpty())
+                    <p class="text-sm text-amber-300">
+                        {{ $ar ? 'لا يوجد سائق متاح حالياً.' : 'No available drivers.' }}
+                    </p>
+                @else
+                    <form method="POST" action="{{ route('admin.deliveries.assign', $delivery) }}" class="space-y-4">
+                        @csrf
+
+                        <label class="block text-sm text-slate-300">
+                            {{ $ar ? 'اختر السائق' : 'Select Driver' }}
+                        </label>
+
+                        <select name="driver_id" required
+                            class="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white">
+
+                            <option value="">
+                                {{ $ar ? 'اختر سائقاً متاحاً' : 'Choose an available driver' }}
+                            </option>
+
+                            @foreach ($availableDrivers as $driver)
+                                <option value="{{ $driver->id }}" @selected(old('driver_id') == $driver->id)>
+                                    {{ $driver->user?->name ?? 'Driver #' . $driver->id }}
+                                    — {{ $driver->vehicle_type ?? 'Vehicle N/A' }}
+                                </option>
+                            @endforeach
+                        </select>
+
+                        <button type="submit" onclick="return confirm(@js($ar ? 'هل تريد إسناد الطلب لهذا السائق؟' : 'Assign this delivery to the selected driver?'))"
+                            class="rounded-xl bg-emerald-600 px-6 py-3 font-bold text-white hover:bg-emerald-500">
+                            {{ $ar ? 'تأكيد الإسناد' : 'Confirm Assignment' }}
+                        </button>
+                    </form>
+                @endif
+            </section>
+        @endif
+
 
         <section class="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h2 class="mb-5 text-lg font-bold text-white">

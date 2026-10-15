@@ -61,6 +61,18 @@ class AdminDeliveryController extends Controller
             'proofOfDelivery',
         ]);
 
-        return view('admin.deliveries.show', compact('delivery'));
+
+        $availableDrivers = \App\Models\Driver::query()
+            ->with('user')
+            ->where('status', 'active')
+            ->where('is_available', true)
+            ->whereDoesntHave('assignments', function ($query) {
+                $query->whereIn('status', ['pending', 'accepted']);
+            })
+            ->orderBy('id')
+            ->get();
+
+
+        return view('admin.deliveries.show', compact('delivery', 'availableDrivers'));
     }
 }

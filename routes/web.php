@@ -6,6 +6,7 @@ use App\Http\Controllers\Web\Admin\AdminProofOfDeliveryController;
 use App\Http\Controllers\Web\Admin\AdminDashboardController;
 use App\Http\Controllers\Web\Admin\AdminDriverController;
 use App\Http\Controllers\Web\Admin\AdminMerchantController;
+use App\Http\Controllers\Web\Admin\AdminDeliveryDispatchController;
 
 use App\Http\Controllers\Auth\WebAuthController;
 use App\Http\Controllers\Web\DashboardController;
@@ -198,6 +199,34 @@ Route::middleware('auth')->group(function () {
                 'updateStatus',
             ])->whereNumber('merchant')
                 ->name('merchants.status');
+
+
+            Route::post('/deliveries/{delivery}/price', [
+                AdminDeliveryDispatchController::class,
+                'price',
+            ])->whereNumber('delivery')
+                ->name('deliveries.price');
+
+            Route::post('/deliveries/{delivery}/assign', [
+                AdminDeliveryDispatchController::class,
+                'assign',
+            ])->whereNumber('delivery')
+                ->name('deliveries.assign');
+
+            Route::get(
+                '/drivers/{driver}/location',
+                [AdminDriverController::class, 'location']
+            )->name('drivers.location');
+
+            Route::get('/drivers/map', [
+                AdminDriverController::class,
+                'map',
+            ])->name('drivers.map');
+
+            Route::get('/drivers/locations', [
+                AdminDriverController::class,
+                'locations',
+            ])->name('drivers.locations');
         });
 
 

@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -111,5 +112,67 @@ class AdminDriverController extends Controller
         return redirect()
             ->route('admin.drivers.index')
             ->with('success', 'Driver status updated successfully.');
+    }
+
+    public function location(
+        Request $request,
+        Driver $driver
+    ): JsonResponse {
+        $this->authorizeAdmin($request);
+
+        return response()->json([
+            'data' => [
+                'driver_id' => $driver->id,
+                'driver_name' => $driver->user?->name,
+                'status' => $driver->status,
+                'is_available' => $driver->is_available,
+                'latitude' => $driver->current_latitude,
+                'longitude' => $driver->current_longitude,
+                'last_location_at' =>
+                $driver->last_location_at?->toISOString(),
+                'has_location' =>
+                $driver->current_latitude !== null
+                    && $driver->current_longitude !== null,
+            ],
+        ]);
+    }
+
+
+    public function map(Request $request): View
+    {
+        $this->authorizeAdmin($request);
+
+        return view('admin.drivers.map');
+    }
+
+    public function locations(
+        Request $request
+    ): \Illuminate\Http\JsonResponse {
+        $this->authorizeAdmin($request);
+
+        $drivers = Driver::query()
+            ->with('user:id,name')
+            ->whereNotNull('current_latitude')
+            ->whereNotNull('current_longitude')
+            ->whereNotNull('last_location_at')
+            ->where('last_location_at', '>=', now()->subHours(24))
+            ->get();
+
+        return response()->json([
+            'data' => $drivers->map(function (Driver $driver) {
+                return [
+                    'id' => $driver->id,
+                    'name' => $driver->user?->name,
+                    'latitude' => (float) $driver->current_latitude,
+                    'longitude' => (float) $driver->current_longitude,
+                    'last_location_at' =>
+                    $driver->last_location_at?->toISOString(),
+                    'is_recent' =>
+                    $driver->last_location_at?->gte(
+                        now()->subMinutes(5)
+                    ) ?? false,
+                ];
+            })->values(),
+        ])->header('Cache-Control', 'no-store, private');
     }
 }

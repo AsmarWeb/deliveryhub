@@ -23,6 +23,13 @@
                     {{ $isAr ? 'إدارة السائقين' : 'Drivers Management' }}
                 </h1>
 
+                <a href="{{ route('admin.drivers.map') }}"
+                    class="inline-flex items-center rounded-xl
+           bg-blue-600 px-5 py-3 font-semibold
+           text-white transition hover:bg-blue-500">
+                    {{ $isAr ? 'خريطة السائقين' : 'Drivers Map' }}
+                </a>
+
                 <p class="mt-1 text-sm text-slate-400">
                     {{ $isAr
                         ? 'متابعة وإدارة السائقين وحالة توفرهم وإسنادات التوصيل'
@@ -101,7 +108,7 @@
                 <table class="w-full min-w-[950px] text-sm">
                     <thead class="bg-slate-800 text-slate-300">
                         <tr>
-                            @foreach ([$isAr ? 'السائق' : 'Driver', $isAr ? 'رقم الهاتف' : 'Phone', $isAr ? 'المركبة' : 'Vehicle', $isAr ? 'حالة الحساب' : 'Account Status', $isAr ? 'التوفر' : 'Availability', $isAr ? 'الإسنادات' : 'Assignments', $isAr ? 'تاريخ التسجيل' : 'Registered', $isAr ? 'الإجراءات' : 'Actions'] as $heading)
+                            @foreach ([$isAr ? 'السائق' : 'Driver', $isAr ? 'رقم الهاتف' : 'Phone', $isAr ? 'المركبة' : 'Vehicle', $isAr ? 'حالة الحساب' : 'Account Status', $isAr ? 'التوفر' : 'Availability', $isAr ? 'الإسنادات' : 'Assignments', $isAr ? 'تاريخ التسجيل' : 'Registered', $isAr ? 'آخر موقع' : 'Last Location', $isAr ? 'الإجراءات' : 'Actions'] as $heading)
                                 <th class="whitespace-nowrap px-5 py-4 text-start font-semibold">
                                     {{ $heading }}
                                 </th>
@@ -129,6 +136,11 @@
                                 $hasActiveAssignments = $driver->active_assignments_count > 0;
 
                                 $cannotDeactivate = $nextStatus === 'inactive' && $hasActiveAssignments;
+
+                                $hasLocation =
+                                    $driver->current_latitude !== null && $driver->current_longitude !== null;
+                                $lastSeen = $driver->last_location_at;
+                                $isRecent = $hasLocation && $lastSeen && $lastSeen->gte(now()->subMinutes(5));
                             @endphp
 
                             <tr class="transition hover:bg-slate-800/60">
@@ -197,42 +209,74 @@
                                     {{ $driver->created_at?->format('Y-m-d') }}
                                 </td>
 
+                                {{-- Last known location: not proof that the driver is online --}}
+                                <td class="px-5 py-4">
+                                    @if ($hasLocation && $lastSeen)
+                                        <span
+                                            class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $isRecent ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400' }}">
+                                            {{ $isRecent ? ($isAr ? 'حديث' : 'Recent') : ($isAr ? 'قديم' : 'Stale') }}
+                                        </span>
+                                        <div class="mt-2 whitespace-nowrap text-xs text-slate-400"
+                                            title="{{ $lastSeen->format('Y-m-d H:i:s T') }}">
+                                            {{ $lastSeen->diffForHumans() }}
+                                        </div>
+                                    @else
+                                        <span
+                                            class="text-xs text-slate-500">{{ $isAr ? 'لا يوجد موقع مسجل' : 'No recorded location' }}</span>
+                                    @endif
+                                </td>
+
                                 {{-- Actions --}}
                                 <td class="px-5 py-4">
-                                    <form method="POST" action="{{ route('admin.drivers.status', $driver) }}">
-                                        @csrf
-                                        @method('PATCH')
+                                    <div class="flex flex-col items-start gap-2">
+                                        @if ($hasLocation)
+                                            <a href="{{ route('admin.drivers.location', $driver) }}"
+                                                class="inline-flex rounded-lg bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-400 hover:bg-blue-500/20">
+                                                {{ $isAr ? 'بيانات الموقع' : 'Location details' }}
+                                            </a>
+                                            <a href="https://www.google.com/maps/search/?api=1&amp;query={{ rawurlencode($driver->current_latitude . ',' . $driver->current_longitude) }}"
+                                                target="_blank" rel="noopener noreferrer"
+                                                class="inline-flex rounded-lg bg-slate-700 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-600"
+                                                title="{{ $isAr ? 'سيتم فتح الموقع لدى Google Maps' : 'Opens location in Google Maps' }}">
+                                                {{ $isAr ? 'فتح الخريطة' : 'Open map' }}
+                                            </a>
+                                        @endif
 
-                                        <input type="hidden" name="status" value="{{ $nextStatus }}">
+                                        <form method="POST" action="{{ route('admin.drivers.status', $driver) }}">
+                                            @csrf
+                                            @method('PATCH')
 
-                                        <button type="submit" @disabled($cannotDeactivate)
-                                            @if (!$cannotDeactivate) onclick="return confirm(@js($isAr ? 'هل أنت متأكد من تغيير حالة هذا السائق؟' : 'Are you sure you want to change this driver status?'))" @endif
-                                            title="{{ $cannotDeactivate
-                                                ? ($isAr
-                                                    ? 'لا يمكن تعطيل السائق لوجود إسنادات نشطة'
-                                                    : 'Driver has active assignments')
-                                                : '' }}"
-                                            class="rounded-lg px-3 py-2 text-xs font-semibold transition
+                                            <input type="hidden" name="status" value="{{ $nextStatus }}">
+
+                                            <button type="submit" @disabled($cannotDeactivate)
+                                                @if (!$cannotDeactivate) onclick="return confirm(@js($isAr ? 'هل أنت متأكد من تغيير حالة هذا السائق؟' : 'Are you sure you want to change this driver status?'))" @endif
+                                                title="{{ $cannotDeactivate
+                                                    ? ($isAr
+                                                        ? 'لا يمكن تعطيل السائق لوجود إسنادات نشطة'
+                                                        : 'Driver has active assignments')
+                                                    : '' }}"
+                                                class="rounded-lg px-3 py-2 text-xs font-semibold transition
                                                 disabled:cursor-not-allowed disabled:opacity-40
                                                 {{ $nextStatus === 'inactive'
                                                     ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
                                                     : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' }}">
 
-                                            {{ $nextStatus === 'inactive' ? ($isAr ? 'تعطيل' : 'Deactivate') : ($isAr ? 'تفعيل' : 'Activate') }}
-                                        </button>
-                                    </form>
+                                                {{ $nextStatus === 'inactive' ? ($isAr ? 'تعطيل' : 'Deactivate') : ($isAr ? 'تفعيل' : 'Activate') }}
+                                            </button>
+                                        </form>
 
-                                    @if ($cannotDeactivate)
-                                        <p class="mt-2 max-w-40 text-xs text-amber-400">
-                                            {{ $isAr ? 'لديه إسنادات نشطة' : 'Active assignments exist' }}
-                                        </p>
-                                    @endif
+                                        @if ($cannotDeactivate)
+                                            <p class="mt-2 max-w-40 text-xs text-amber-400">
+                                                {{ $isAr ? 'لديه إسنادات نشطة' : 'Active assignments exist' }}
+                                            </p>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
 
                         @empty
                             <tr>
-                                <td colspan="8" class="px-5 py-16 text-center text-slate-400">
+                                <td colspan="9" class="px-5 py-16 text-center text-slate-400">
                                     {{ $isAr ? 'لا يوجد سائقون مطابقون للبحث' : 'No drivers found' }}
                                 </td>
                             </tr>

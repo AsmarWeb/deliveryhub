@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\V1\MerchantAddressController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\DeliveryTrackingController;
@@ -14,6 +15,8 @@ use App\Http\Controllers\Api\V1\DeliveryAssignmentController;
 use App\Http\Controllers\Api\V1\DeliveryTransitionController;
 use App\Http\Controllers\Api\V1\DeliveryPricingController;
 use App\Http\Controllers\Api\V1\DeliveryController;
+use App\Http\Controllers\Api\V1\DriverProfileController;
+use App\Http\Controllers\Api\V1\DriverLocationController;
 
 Route::prefix('v1')->group(function () {
 
@@ -92,6 +95,21 @@ Route::prefix('v1')->group(function () {
                 '/assignments/{assignment}/reject',
                 [DriverAssignmentController::class, 'reject']
             );
+
+            Route::get('/profile', [
+                DriverProfileController::class,
+                'show',
+            ])->name('driver.profile.show');
+
+            Route::patch('/availability', [
+                DriverProfileController::class,
+                'updateAvailability',
+            ])->name('driver.availability.update');
+
+            Route::patch('/location', [
+                DriverLocationController::class,
+                'update',
+            ])->middleware('throttle:30,1')->name('driver.location.update');
         });
 
     Route::middleware('auth:sanctum')
@@ -138,4 +156,10 @@ Route::prefix('v1')->group(function () {
                 'markAllAsRead'
             ]);
         });
+
+    Route::middleware('auth:sanctum')
+        ->get('/merchant/addresses', [
+            MerchantAddressController::class,
+            'index',
+        ]);
 });

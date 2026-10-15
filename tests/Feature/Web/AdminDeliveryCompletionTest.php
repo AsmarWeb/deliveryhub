@@ -256,4 +256,34 @@ class AdminDeliveryCompletionTest extends TestCase
             $this->delivery->fresh()->status
         );
     }
+
+
+    public function test_inactive_driver_does_not_become_available_after_completion(): void
+    {
+        // Simulate an inactive driver with an existing accepted assignment.
+        $this->driver->update([
+            'status' => 'inactive',
+            'is_available' => false,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post($this->url())
+            ->assertRedirect(
+                route('admin.deliveries.show', $this->delivery)
+            );
+
+        $this->assertSame(
+            DeliveryStatus::Completed,
+            $this->delivery->fresh()->status
+        );
+
+        $this->assertSame(
+            'inactive',
+            $this->driver->fresh()->status
+        );
+
+        $this->assertFalse(
+            (bool) $this->driver->fresh()->is_available
+        );
+    }
 }

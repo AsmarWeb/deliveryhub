@@ -5,6 +5,7 @@ use App\Http\Controllers\Web\Admin\AdminDeliveryCompletionController;
 use App\Http\Controllers\Web\Admin\AdminProofOfDeliveryController;
 use App\Http\Controllers\Web\Admin\AdminDashboardController;
 use App\Http\Controllers\Web\Admin\AdminDriverController;
+use App\Http\Controllers\Web\Admin\AdminMerchantController;
 
 use App\Http\Controllers\Auth\WebAuthController;
 use App\Http\Controllers\Web\DashboardController;
@@ -180,6 +181,23 @@ Route::middleware('auth')->group(function () {
                 'updateStatus',
             ])->whereNumber('driver')
                 ->name('drivers.status');
+
+            Route::get('/merchants', [
+                AdminMerchantController::class,
+                'index',
+            ])->name('merchants.index');
+
+            Route::get('/merchants/{merchant}', [
+                AdminMerchantController::class,
+                'show',
+            ])->whereNumber('merchant')
+                ->name('merchants.show');
+
+            Route::patch('/merchants/{merchant}/status', [
+                AdminMerchantController::class,
+                'updateStatus',
+            ])->whereNumber('merchant')
+                ->name('merchants.status');
         });
 
 

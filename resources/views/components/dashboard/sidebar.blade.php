@@ -1,6 +1,7 @@
 @php
     $user = auth()->user();
     $locale = app()->getLocale();
+    $isAr = $locale === 'ar';
 
     $role = match (true) {
         $user->hasRole('admin') => 'admin',
@@ -12,71 +13,85 @@
     $items = [];
 
     if ($role === 'admin') {
-        $items[] = [
-            'route' => 'admin.dashboard',
-            'active' => 'admin.dashboard',
-            'label' => $locale === 'ar' ? 'لوحة الإدارة' : 'Admin Overview',
-            'icon' => 'home',
-        ];
-
-        $items[] = [
-            'route' => 'admin.deliveries.index',
-            'active' => 'admin.deliveries.*',
-            'label' => $locale === 'ar' ? 'إدارة الشحنات' : 'Manage Deliveries',
-            'icon' => 'package',
+        $items = [
+            [
+                'route' => 'admin.dashboard',
+                'active' => 'admin.dashboard',
+                'label' => $isAr ? 'لوحة الإدارة' : 'Admin Overview',
+                'icon' => 'home',
+            ],
+            [
+                'route' => 'admin.deliveries.index',
+                'active' => 'admin.deliveries.*',
+                'label' => $isAr ? 'إدارة الشحنات' : 'Manage Deliveries',
+                'icon' => 'package',
+            ],
+            [
+                'route' => 'admin.merchants.index',
+                'active' => 'admin.merchants.*',
+                'label' => $isAr ? 'إدارة التجار' : 'Manage Merchants',
+                'icon' => 'users',
+            ],
+            [
+                'route' => 'admin.drivers.index',
+                'active' => 'admin.drivers.*',
+                'label' => $isAr ? 'إدارة السائقين' : 'Manage Drivers',
+                'icon' => 'truck',
+            ],
         ];
     }
 
     if ($role === 'merchant') {
-        $items[] = [
-            'route' => 'web.dashboard',
-            'active' => 'web.dashboard',
-            'label' => __('dashboard.dashboard'),
-            'icon' => 'home',
-        ];
-
-        $items[] = [
-            'route' => 'merchant.deliveries.index',
-            'active' => 'merchant.deliveries.index',
-            'label' => __('dashboard.my_deliveries'),
-            'icon' => 'package',
-        ];
-
-        $items[] = [
-            'route' => 'merchant.deliveries.create',
-            'active' => 'merchant.deliveries.create',
-            'label' => __('dashboard.create_delivery'),
-            'icon' => 'plus',
-        ];
-
-        $items[] = [
-            'route' => 'merchant.addresses.index',
-            'active' => 'merchant.addresses.*',
-            'label' => __('dashboard.my_addresses'),
-            'icon' => 'map-pin',
+        $items = [
+            [
+                'route' => 'web.dashboard',
+                'active' => 'web.dashboard',
+                'label' => __('dashboard.dashboard'),
+                'icon' => 'home',
+            ],
+            [
+                'route' => 'merchant.deliveries.index',
+                'active' => 'merchant.deliveries.index',
+                'label' => __('dashboard.my_deliveries'),
+                'icon' => 'package',
+            ],
+            [
+                'route' => 'merchant.deliveries.create',
+                'active' => 'merchant.deliveries.create',
+                'label' => __('dashboard.create_delivery'),
+                'icon' => 'plus',
+            ],
+            [
+                'route' => 'merchant.addresses.index',
+                'active' => 'merchant.addresses.*',
+                'label' => __('dashboard.my_addresses'),
+                'icon' => 'map-pin',
+            ],
         ];
     }
 
     if ($role === 'driver') {
-        $items[] = [
-            'route' => 'web.dashboard',
-            'active' => 'web.dashboard',
-            'label' => __('dashboard.dashboard'),
-            'icon' => 'home',
-        ];
-
-        $items[] = [
-            'route' => 'driver.assignments.index',
-            'active' => 'driver.assignments.*',
-            'label' => __('dashboard.my_assignments'),
-            'icon' => 'truck',
+        $items = [
+            [
+                'route' => 'web.dashboard',
+                'active' => 'web.dashboard',
+                'label' => __('dashboard.dashboard'),
+                'icon' => 'home',
+            ],
+            [
+                'route' => 'driver.assignments.index',
+                'active' => 'driver.assignments.*',
+                'label' => __('dashboard.my_assignments'),
+                'icon' => 'truck',
+            ],
         ];
     }
 
-    $items = array_values(array_filter($items, fn($item) => Route::has($item['route'])));
+    // Show only links whose routes exist.
+    $items = array_values(array_filter($items, fn($item) => \Illuminate\Support\Facades\Route::has($item['route'])));
 
     $upcoming = match ($role) {
-        'admin' => [__('dashboard.merchants'), __('dashboard.drivers')],
+        'admin' => [],
         'merchant' => [],
         'driver' => [__('dashboard.delivery_history')],
         default => [],
@@ -84,6 +99,7 @@
 
     $homeRoute = $role === 'admin' ? 'admin.dashboard' : 'web.dashboard';
 @endphp
+
 
 
 <div id="sidebar-overlay" class="sidebar-overlay" hidden></div>
@@ -132,6 +148,20 @@
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
                                 <circle cx="12" cy="10" r="2.5" />
+                            </svg>
+                        @break
+
+                        @case('users')
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                                stroke-linecap="round" stroke-linejoin="round">
+
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+
+                                <circle cx="9" cy="7" r="4" />
+
+                                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                             </svg>
                         @break
 

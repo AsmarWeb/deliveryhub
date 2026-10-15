@@ -1,152 +1,251 @@
-<!DOCTYPE html>
-<html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
+@extends('layouts.dashboard')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Drivers Management - DeliveryHub</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
+@section('title', app()->getLocale() === 'ar' ? 'إدارة السائقين' : 'Drivers Management')
 
-<body class="min-h-screen bg-slate-950 text-slate-100">
-    <div class="mx-auto max-w-7xl px-4 py-10">
+@section('page-title', app()->getLocale() === 'ar' ? 'إدارة السائقين' : 'Drivers Management')
 
-        <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
+@section('content')
+    @php
+        $isAr = app()->getLocale() === 'ar';
+
+        $statuses = [
+            'active' => $isAr ? 'نشط' : 'Active',
+            'inactive' => $isAr ? 'غير نشط' : 'Inactive',
+        ];
+    @endphp
+
+    <div class="mx-auto max-w-7xl space-y-6">
+
+        {{-- Header --}}
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <h1 class="text-3xl font-bold">
-                    {{ app()->getLocale() === 'ar' ? 'إدارة السائقين' : 'Drivers Management' }}
+                <h1 class="text-2xl font-bold text-white">
+                    {{ $isAr ? 'إدارة السائقين' : 'Drivers Management' }}
                 </h1>
-                <p class="mt-2 text-slate-400">
-                    DeliveryHub Admin
+
+                <p class="mt-1 text-sm text-slate-400">
+                    {{ $isAr
+                        ? 'متابعة وإدارة السائقين وحالة توفرهم وإسنادات التوصيل'
+                        : 'Monitor drivers, availability and delivery assignments' }}
                 </p>
             </div>
 
-            <a href="{{ route('admin.dashboard') }}" class="rounded-lg bg-slate-800 px-4 py-2 hover:bg-slate-700">
-                {{ app()->getLocale() === 'ar' ? 'لوحة التحكم' : 'Dashboard' }}
-            </a>
+            <div class="rounded-xl border border-slate-700 bg-slate-800 px-4 py-3">
+                <span class="text-sm text-slate-400">
+                    {{ $isAr ? 'إجمالي النتائج' : 'Total Results' }}
+                </span>
+
+                <strong class="ms-2 text-xl text-white">
+                    {{ $drivers->total() }}
+                </strong>
+            </div>
         </div>
 
+        {{-- Success Message --}}
         @if (session('success'))
-            <div class="mb-5 rounded-lg border border-emerald-700 bg-emerald-950 p-4 text-emerald-300">
-                {{ session('success') }}
+            <div class="rounded-xl border border-emerald-700 bg-emerald-500/10 px-5 py-4 text-sm text-emerald-400">
+                {{ $isAr ? 'تم تحديث حالة السائق بنجاح.' : session('success') }}
             </div>
         @endif
 
+        {{-- Validation Errors --}}
         @if ($errors->any())
-            <div class="mb-5 rounded-lg border border-red-700 bg-red-950 p-4 text-red-300">
-                @foreach ($errors->all() as $error)
-                    <p>{{ $error }}</p>
-                @endforeach
+            <div class="rounded-xl border border-red-700 bg-red-500/10 px-5 py-4 text-sm text-red-400">
+                <p class="font-semibold">
+                    {{ $isAr ? 'تعذر تنفيذ العملية' : 'Unable to complete the operation' }}
+                </p>
+
+                <ul class="mt-2 list-inside list-disc space-y-1">
+                    @foreach ($errors->all() as $error)
+                        <li>
+                            {{ $isAr && $errors->has('status')
+                                ? 'تعذر تغيير حالة السائق. تحقق من عدم وجود إسنادات نشطة وصحة الحالة المطلوبة.'
+                                : $error }}
+                        </li>
+                    @endforeach
+                </ul>
             </div>
         @endif
 
-        <form method="GET" action="{{ route('admin.drivers.index') }}" class="mb-6 flex flex-wrap gap-3">
+        {{-- Search & Filters --}}
+        <form method="GET" action="{{ route('admin.drivers.index') }}"
+            class="grid gap-3 rounded-2xl border border-slate-700 bg-slate-900 p-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] lg:items-center">
 
             <input type="search" name="search" value="{{ request('search') }}"
-                placeholder="{{ app()->getLocale() === 'ar' ? 'بحث بالاسم أو الهاتف أو البريد' : 'Search name, phone or email' }}"
-                class="min-w-64 flex-1 rounded-lg border border-slate-700 bg-slate-900 px-4 py-3">
+                placeholder="{{ $isAr ? 'اسم السائق أو رقم الهاتف أو البريد الإلكتروني' : 'Driver name, phone number or email' }}"
+                class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none">
 
-            <select name="status" class="rounded-lg border border-slate-700 bg-slate-900 px-4 py-3">
-                <option value="">All statuses</option>
-                <option value="active" @selected(request('status') === 'active')>
-                    Active
+            <select name="status"
+                class="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white focus:border-blue-500 focus:outline-none">
+
+                <option value="">
+                    {{ $isAr ? 'جميع الحالات' : 'All Statuses' }}
                 </option>
-                <option value="inactive" @selected(request('status') === 'inactive')>
-                    Inactive
-                </option>
+
+                @foreach ($statuses as $value => $label)
+                    <option value="{{ $value }}" @selected(request('status') === $value)>
+                        {{ $label }}
+                    </option>
+                @endforeach
             </select>
 
-            <button class="rounded-lg bg-blue-600 px-5 py-3 font-medium hover:bg-blue-500">
-                Search
+            <button type="submit"
+                class="rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-500">
+                {{ $isAr ? 'بحث وتصفية' : 'Search & Filter' }}
             </button>
         </form>
 
-        <div class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900">
-            <table class="w-full min-w-[900px] text-sm">
-                <thead class="bg-slate-800 text-slate-300">
-                    <tr>
-                        <th class="p-4 text-start">Driver</th>
-                        <th class="p-4 text-start">Phone</th>
-                        <th class="p-4 text-start">Vehicle</th>
-                        <th class="p-4 text-start">Status</th>
-                        <th class="p-4 text-start">Availability</th>
-                        <th class="p-4 text-start">Assignments</th>
-                        <th class="p-4 text-start">Actions</th>
-                    </tr>
-                </thead>
-
-                <tbody class="divide-y divide-slate-800">
-                    @forelse($drivers as $driver)
-                        <tr class="hover:bg-slate-800/50">
-                            <td class="p-4">
-                                <div class="font-semibold">
-                                    {{ $driver->user?->name ?? 'Unknown' }}
-                                </div>
-                                <div class="text-slate-400">
-                                    {{ $driver->user?->email }}
-                                </div>
-                            </td>
-
-                            <td class="p-4">
-                                {{ $driver->phone ?? '-' }}
-                            </td>
-
-                            <td class="p-4">
-                                {{ $driver->vehicle_type ?? '-' }}
-                                <div class="text-slate-400">
-                                    {{ $driver->vehicle_plate }}
-                                </div>
-                            </td>
-
-                            <td class="p-4">
-                                {{ ucfirst($driver->status) }}
-                            </td>
-
-                            <td class="p-4">
-                                {{ $driver->is_available ? 'Available' : 'Unavailable' }}
-                            </td>
-
-                            <td class="p-4">
-                                {{ $driver->assignments_count }}
-                                <div class="text-xs text-slate-400">
-                                    Active: {{ $driver->active_assignments_count }}
-                                </div>
-                            </td>
-
-                            <td class="p-4">
-                                @php
-                                    $nextStatus = $driver->status === 'active' ? 'inactive' : 'active';
-                                @endphp
-
-                                <form method="POST" action="{{ route('admin.drivers.status', $driver) }}">
-                                    @csrf
-                                    @method('PATCH')
-
-                                    <input type="hidden" name="status" value="{{ $nextStatus }}">
-
-                                    <button type="submit" @disabled($nextStatus === 'inactive' && $driver->active_assignments_count > 0)
-                                        class="rounded-lg bg-slate-700 px-3 py-2 hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-40">
-                                        {{ $nextStatus === 'active' ? 'Activate' : 'Deactivate' }}
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    @empty
+        {{-- Drivers Table --}}
+        <div class="overflow-hidden rounded-2xl border border-slate-700 bg-slate-900">
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[950px] text-sm">
+                    <thead class="bg-slate-800 text-slate-300">
                         <tr>
-                            <td colspan="7" class="p-10 text-center text-slate-400">
-                                No drivers found.
-                            </td>
+                            @foreach ([$isAr ? 'السائق' : 'Driver', $isAr ? 'رقم الهاتف' : 'Phone', $isAr ? 'المركبة' : 'Vehicle', $isAr ? 'حالة الحساب' : 'Account Status', $isAr ? 'التوفر' : 'Availability', $isAr ? 'الإسنادات' : 'Assignments', $isAr ? 'تاريخ التسجيل' : 'Registered', $isAr ? 'الإجراءات' : 'Actions'] as $heading)
+                                <th class="whitespace-nowrap px-5 py-4 text-start font-semibold">
+                                    {{ $heading }}
+                                </th>
+                            @endforeach
                         </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                    </thead>
+
+                    <tbody class="divide-y divide-slate-800">
+                        @forelse ($drivers as $driver)
+                            @php
+                                $status = $driver->status;
+
+                                $statusClass = match ($status) {
+                                    'active' => 'bg-emerald-500/10 text-emerald-400',
+                                    'inactive' => 'bg-red-500/10 text-red-400',
+                                    default => 'bg-slate-500/10 text-slate-400',
+                                };
+
+                                $availabilityClass = $driver->is_available
+                                    ? 'bg-emerald-500/10 text-emerald-400'
+                                    : 'bg-amber-500/10 text-amber-400';
+
+                                $nextStatus = $status === 'active' ? 'inactive' : 'active';
+
+                                $hasActiveAssignments = $driver->active_assignments_count > 0;
+
+                                $cannotDeactivate = $nextStatus === 'inactive' && $hasActiveAssignments;
+                            @endphp
+
+                            <tr class="transition hover:bg-slate-800/60">
+
+                                {{-- Driver --}}
+                                <td class="px-5 py-4">
+                                    <div class="font-semibold text-white">
+                                        {{ $driver->user?->name ?? ($isAr ? 'غير معروف' : 'Unknown') }}
+                                    </div>
+
+                                    <div class="mt-1 text-xs text-slate-400">
+                                        {{ $driver->user?->email ?? '—' }}
+                                    </div>
+                                </td>
+
+                                {{-- Phone --}}
+                                <td class="whitespace-nowrap px-5 py-4 text-slate-300">
+                                    <span dir="ltr" class="inline-block">
+                                        {{ $driver->phone ?? '—' }}
+                                    </span>
+                                </td>
+
+                                {{-- Vehicle --}}
+                                <td class="px-5 py-4">
+                                    <div class="text-slate-300">
+                                        {{ $driver->vehicle_type ?? '—' }}
+                                    </div>
+
+                                    <div class="mt-1 text-xs text-slate-400">
+                                        {{ $driver->vehicle_plate ?? '—' }}
+                                    </div>
+                                </td>
+
+                                {{-- Account Status --}}
+                                <td class="px-5 py-4">
+                                    <span
+                                        class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $statusClass }}">
+                                        {{ $statuses[$status] ?? $status }}
+                                    </span>
+                                </td>
+
+                                {{-- Availability --}}
+                                <td class="px-5 py-4">
+                                    <span
+                                        class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $availabilityClass }}">
+                                        {{ $driver->is_available ? ($isAr ? 'متاح' : 'Available') : ($isAr ? 'غير متاح' : 'Unavailable') }}
+                                    </span>
+                                </td>
+
+                                {{-- Assignments --}}
+                                <td class="px-5 py-4">
+                                    <div class="font-semibold text-white">
+                                        {{ $driver->assignments_count }}
+                                    </div>
+
+                                    <div class="mt-1 text-xs text-slate-400">
+                                        {{ $isAr ? 'النشطة:' : 'Active:' }}
+                                        <span class="{{ $hasActiveAssignments ? 'text-amber-400' : 'text-slate-400' }}">
+                                            {{ $driver->active_assignments_count }}
+                                        </span>
+                                    </div>
+                                </td>
+
+                                {{-- Registration Date --}}
+                                <td class="whitespace-nowrap px-5 py-4 text-slate-400">
+                                    {{ $driver->created_at?->format('Y-m-d') }}
+                                </td>
+
+                                {{-- Actions --}}
+                                <td class="px-5 py-4">
+                                    <form method="POST" action="{{ route('admin.drivers.status', $driver) }}">
+                                        @csrf
+                                        @method('PATCH')
+
+                                        <input type="hidden" name="status" value="{{ $nextStatus }}">
+
+                                        <button type="submit" @disabled($cannotDeactivate)
+                                            @if (!$cannotDeactivate) onclick="return confirm(@js($isAr ? 'هل أنت متأكد من تغيير حالة هذا السائق؟' : 'Are you sure you want to change this driver status?'))" @endif
+                                            title="{{ $cannotDeactivate
+                                                ? ($isAr
+                                                    ? 'لا يمكن تعطيل السائق لوجود إسنادات نشطة'
+                                                    : 'Driver has active assignments')
+                                                : '' }}"
+                                            class="rounded-lg px-3 py-2 text-xs font-semibold transition
+                                                disabled:cursor-not-allowed disabled:opacity-40
+                                                {{ $nextStatus === 'inactive'
+                                                    ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
+                                                    : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' }}">
+
+                                            {{ $nextStatus === 'inactive' ? ($isAr ? 'تعطيل' : 'Deactivate') : ($isAr ? 'تفعيل' : 'Activate') }}
+                                        </button>
+                                    </form>
+
+                                    @if ($cannotDeactivate)
+                                        <p class="mt-2 max-w-40 text-xs text-amber-400">
+                                            {{ $isAr ? 'لديه إسنادات نشطة' : 'Active assignments exist' }}
+                                        </p>
+                                    @endif
+                                </td>
+                            </tr>
+
+                        @empty
+                            <tr>
+                                <td colspan="8" class="px-5 py-16 text-center text-slate-400">
+                                    {{ $isAr ? 'لا يوجد سائقون مطابقون للبحث' : 'No drivers found' }}
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <div class="mt-6">
+        {{-- Pagination --}}
+        <div>
             {{ $drivers->links() }}
         </div>
 
     </div>
-</body>
-
-</html>
+@endsection

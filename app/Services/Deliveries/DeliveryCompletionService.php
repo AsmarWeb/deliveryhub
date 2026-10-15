@@ -70,7 +70,7 @@ class DeliveryCompletionService
             );
 
             $driver->update([
-                'is_available' => true,
+                'is_available' => $driver->status === 'active',
             ]);
 
             return [

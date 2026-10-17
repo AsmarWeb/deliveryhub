@@ -30,7 +30,7 @@ class AdminDriverController extends Controller
             'search' => ['nullable', 'string', 'max:100'],
             'status' => [
                 'nullable',
-                Rule::in(['active', 'inactive']),
+                Rule::in(['pending', 'active', 'inactive']),
             ],
         ]);
 
@@ -107,6 +107,14 @@ class AdminDriverController extends Controller
                 'status' => $data['status'],
                 'is_available' => false,
             ]);
+
+            if ($data['status'] === 'active') {
+                $user = $driver->user;
+
+                if (! $user->hasRole('driver')) {
+                    $user->addRole('driver');
+                }
+            }
         });
 
         return redirect()

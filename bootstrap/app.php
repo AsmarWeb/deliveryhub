@@ -15,6 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', [
             \App\Http\Middleware\SetLocale::class,
         ]);
+
+        $middleware->alias([
+            'account.active' => \App\Http\Middleware\EnsureOperationalAccountActive::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

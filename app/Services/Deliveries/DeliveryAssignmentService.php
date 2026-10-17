@@ -45,14 +45,9 @@ class DeliveryAssignmentService
                 ]);
             }
 
-            if (
-                ! in_array($delivery->status, [
-                    DeliveryStatus::Priced,
-                    DeliveryStatus::Matching,
-                ], true)
-            ) {
+            if ($delivery->status !== DeliveryStatus::Matching) {
                 throw ValidationException::withMessages([
-                    'delivery' => 'Delivery is not ready for assignment.',
+                    'delivery' => 'Merchant price approval is required before assignment.',
                 ]);
             }
 
@@ -65,15 +60,6 @@ class DeliveryAssignmentService
                 throw ValidationException::withMessages([
                     'delivery' => 'Delivery already has an active assignment.',
                 ]);
-            }
-
-            if ($delivery->status === DeliveryStatus::Priced) {
-                $delivery = $this->transitions->transition(
-                    $delivery,
-                    DeliveryStatus::Matching,
-                    $actor,
-                    'Driver matching started'
-                );
             }
 
             $assignment = DeliveryAssignment::create([

@@ -139,6 +139,7 @@ class DeliveryLifecycleTest extends TestCase
     private function assignAndAccept(Delivery $delivery): int
     {
         $this->submitAndPrice($delivery);
+        $this->approvePrice($delivery);
 
         $assignment = $this->actingAs($this->admin)
             ->postJson("/api/v1/deliveries/{$delivery->id}/assign", ['driver_id' => $this->driver->id])
@@ -201,6 +202,7 @@ class DeliveryLifecycleTest extends TestCase
         $delivery = $this->createDelivery();
         $this->submitAndPrice($delivery);
         $this->assertSame(DeliveryStatus::Priced, $delivery->fresh()->status);
+        $this->approvePrice($delivery);
 
         $response = $this->actingAs($this->admin)
             ->postJson("/api/v1/deliveries/{$delivery->id}/assign", ['driver_id' => $this->driver->id])
@@ -215,6 +217,7 @@ class DeliveryLifecycleTest extends TestCase
     {
         $delivery = $this->createDelivery();
         $this->submitAndPrice($delivery);
+        $this->approvePrice($delivery);
         $assignmentId = $this->actingAs($this->admin)
             ->postJson("/api/v1/deliveries/{$delivery->id}/assign", ['driver_id' => $this->driver->id])
             ->assertCreated()->json('data.id');
@@ -330,5 +333,103 @@ class DeliveryLifecycleTest extends TestCase
             ->postJson("/api/v1/deliveries/{$delivery->id}/complete")
             ->assertUnprocessable();
         $this->assertSame(DeliveryStatus::Draft, $delivery->fresh()->status);
+    }
+
+    public function test_admin_cannot_assign_before_merchant_approves_price(): void
+    {
+        $delivery = $this->createDelivery();
+        $this->submitAndPrice($delivery);
+
+        $this->actingAs($this->admin)
+            ->postJson("/api/v1/deliveries/{$delivery->id}/assign", [
+                'driver_id' => $this->driver->id,
+            ])
+            ->assertUnprocessable();
+
+        $this->assertSame(DeliveryStatus::Priced, $delivery->fresh()->status);
+        $this->assertSame(0, $delivery->assignments()->count());
+    }
+
+    public function test_merchant_can_approve_own_priced_delivery(): void
+    {
+        $delivery = $this->createDelivery();
+        $this->submitAndPrice($delivery);
+        $before = $delivery->statusHistories()->count();
+
+        $this->approvePrice($delivery);
+
+        $this->assertSame($before + 1, $delivery->statusHistories()->count());
+        $this->assertDatabaseHas('delivery_status_histories', [
+            'delivery_id' => $delivery->id,
+            'user_id' => $this->merchantUser->id,
+            'from_status' => DeliveryStatus::Priced->value,
+            'to_status' => DeliveryStatus::Matching->value,
+        ]);
+    }
+
+    public function test_other_merchant_cannot_approve_price(): void
+    {
+        $delivery = $this->createDelivery();
+        $this->submitAndPrice($delivery);
+        $before = $delivery->statusHistories()->count();
+
+        $this->actingAs($this->otherMerchantUser)
+            ->postJson("/api/v1/deliveries/{$delivery->id}/approve-price")
+            ->assertForbidden();
+
+        $this->assertSame(DeliveryStatus::Priced, $delivery->fresh()->status);
+        $this->assertSame($before, $delivery->statusHistories()->count());
+    }
+
+    public function test_driver_cannot_approve_delivery_price(): void
+    {
+        $delivery = $this->createDelivery();
+        $this->submitAndPrice($delivery);
+
+        $this->actingAs($this->driverUser)
+            ->postJson("/api/v1/deliveries/{$delivery->id}/approve-price")
+            ->assertForbidden();
+
+        $this->assertSame(DeliveryStatus::Priced, $delivery->fresh()->status);
+    }
+
+    public function test_merchant_cannot_approve_price_before_pricing(): void
+    {
+        $delivery = $this->createDelivery();
+
+        $this->actingAs($this->merchantUser)
+            ->postJson("/api/v1/deliveries/{$delivery->id}/approve-price")
+            ->assertUnprocessable();
+
+        $this->assertSame(DeliveryStatus::Draft, $delivery->fresh()->status);
+    }
+
+    public function test_price_approval_cannot_be_repeated(): void
+    {
+        $delivery = $this->createDelivery();
+        $this->submitAndPrice($delivery);
+        $this->approvePrice($delivery);
+        $before = $delivery->statusHistories()->count();
+
+        $this->actingAs($this->merchantUser)
+            ->postJson("/api/v1/deliveries/{$delivery->id}/approve-price")
+            ->assertUnprocessable();
+
+        $this->assertSame(DeliveryStatus::Matching, $delivery->fresh()->status);
+        $this->assertSame($before, $delivery->statusHistories()->count());
+    }
+
+    private function approvePrice(Delivery $delivery): void
+    {
+        $this->actingAs($this->merchantUser)
+            ->postJson(
+                "/api/v1/deliveries/{$delivery->id}/approve-price"
+            )
+            ->assertOk();
+
+        $this->assertSame(
+            DeliveryStatus::Matching,
+            $delivery->fresh()->status
+        );
     }
 }

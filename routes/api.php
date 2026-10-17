@@ -17,17 +17,21 @@ use App\Http\Controllers\Api\V1\DeliveryPricingController;
 use App\Http\Controllers\Api\V1\DeliveryController;
 use App\Http\Controllers\Api\V1\DriverProfileController;
 use App\Http\Controllers\Api\V1\DriverLocationController;
+use App\Http\Controllers\Api\V1\MerchantDeliveryPriceApprovalController;
+use App\Http\Controllers\Api\V1\Auth\SelfRegistrationController;
 
 Route::prefix('v1')->group(function () {
 
-    Route::middleware('auth:sanctum')
+    Route::middleware([
+        'auth:sanctum',
+        'account.active',
+    ])
         ->get('/dashboard', DashboardController::class)
         ->name('dashboard');
 
     Route::prefix('auth')->group(function () {
 
         // Public routes
-        Route::post('/register', [AuthController::class, 'register']);
         Route::post('/login', [AuthController::class, 'login']);
 
         // Protected routes
@@ -35,6 +39,9 @@ Route::prefix('v1')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout']);
             Route::get('/me', [AuthController::class, 'me']);
         });
+
+        Route::post('/register/merchant', [SelfRegistrationController::class, 'merchant'])->middleware('throttle:5,1');
+        Route::post('/register/driver', [SelfRegistrationController::class, 'driver'])->middleware('throttle:5,1');
     });
 
 
@@ -51,6 +58,10 @@ Route::prefix('v1')->group(function () {
             Route::post(
                 '/{delivery}/price',
                 DeliveryPricingController::class
+            );
+            Route::post(
+                '/{delivery}/approve-price',
+                MerchantDeliveryPriceApprovalController::class
             );
             Route::post(
                 '{delivery}/assign',
@@ -157,9 +168,16 @@ Route::prefix('v1')->group(function () {
             ]);
         });
 
-    Route::middleware('auth:sanctum')
-        ->get('/merchant/addresses', [
+    Route::middleware('auth:sanctum')->group(function () {
+
+        Route::get('/merchant/addresses', [
             MerchantAddressController::class,
             'index',
         ]);
+
+        Route::post('/merchant/addresses', [
+            MerchantAddressController::class,
+            'store',
+        ]);
+    });
 });

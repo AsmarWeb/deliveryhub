@@ -29,7 +29,7 @@ class AdminMerchantController extends Controller
             'search' => ['nullable', 'string', 'max:100'],
             'status' => [
                 'nullable',
-                Rule::in(['active', 'inactive']),
+                Rule::in(['pending', 'active', 'inactive']),
             ],
         ]);
 
@@ -52,8 +52,8 @@ class AdminMerchantController extends Controller
             )
             ->when(
                 $filters['status'] ?? null,
-                fn ($query, $status) =>
-                    $query->where('status', $status)
+                fn($query, $status) =>
+                $query->where('status', $status)
             )
             ->latest()
             ->paginate(15)
@@ -91,7 +91,7 @@ class AdminMerchantController extends Controller
         $data = $request->validate([
             'status' => [
                 'required',
-                Rule::in(['active', 'inactive']),
+                Rule::in(['pending', 'active', 'inactive']),
             ],
         ]);
 

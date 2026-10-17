@@ -88,7 +88,8 @@ class DriverAssignmentActionsTest extends TestCase
 
         $this->assertDatabaseHas('drivers', [
             'id' => $this->driver->id,
-            'is_available' => false,
+            'is_available' => true,
+            'work_status' => 'busy',
         ]);
     }
 

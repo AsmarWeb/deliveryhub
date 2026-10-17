@@ -188,6 +188,87 @@ class DeliveryTrackingTest extends TestCase
         $this->actingAs($this->otherDriverUser)->getJson($this->endpoint())->assertForbidden();
     }
 
+
+    public function test_driver_can_update_location_for_own_active_delivery(): void
+    {
+        $this->actingAs($this->driverUser)
+            ->patchJson('/api/v1/driver/location', [
+                'delivery_id' => $this->delivery->id,
+                'latitude' => 25.2048,
+                'longitude' => 55.2708,
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseHas('delivery_driver_locations', [
+            'delivery_id' => $this->delivery->id,
+            'latitude' => 25.2048,
+            'longitude' => 55.2708,
+        ]);
+
+        $this->actingAs($this->merchantUser)
+            ->getJson($this->endpoint())
+            ->assertOk()
+            ->assertJsonPath('data.driver_location.latitude', 25.2048)
+            ->assertJsonPath('data.driver_location.longitude', 55.2708);
+    }
+
+    public function test_other_driver_cannot_update_delivery_location(): void
+    {
+        $this->actingAs($this->otherDriverUser)
+            ->patchJson('/api/v1/driver/location', [
+                'delivery_id' => $this->delivery->id,
+                'latitude' => 25.2048,
+                'longitude' => 55.2708,
+            ])
+            ->assertStatus(409);
+
+        $this->assertDatabaseMissing('delivery_driver_locations', [
+            'delivery_id' => $this->delivery->id,
+        ]);
+    }
+
+    public function test_completed_delivery_does_not_expose_driver_location(): void
+    {
+        $driver = Driver::where('user_id', $this->driverUser->id)->firstOrFail();
+
+        \Illuminate\Support\Facades\DB::table('delivery_driver_locations')->insert([
+            'delivery_id' => $this->delivery->id,
+            'driver_id' => $driver->id,
+            'latitude' => 25.2048,
+            'longitude' => 55.2708,
+            'recorded_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->delivery->update(['status' => 'completed']);
+
+        $this->actingAs($this->merchantUser)
+            ->getJson($this->endpoint())
+            ->assertOk()
+            ->assertJsonPath('data.driver_location', null);
+    }
+
+    public function test_stale_location_is_not_exposed(): void
+    {
+        $driver = Driver::where('user_id', $this->driverUser->id)->firstOrFail();
+
+        \Illuminate\Support\Facades\DB::table('delivery_driver_locations')->insert([
+            'delivery_id' => $this->delivery->id,
+            'driver_id' => $driver->id,
+            'latitude' => 25.2048,
+            'longitude' => 55.2708,
+            'recorded_at' => now()->subMinutes(5),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($this->merchantUser)
+            ->getJson($this->endpoint())
+            ->assertOk()
+            ->assertJsonPath('data.driver_location', null);
+    }
+
     public function test_tracking_response_excludes_private_delivery_details(): void
     {
         $this->actingAs($this->merchantUser)->getJson($this->endpoint())

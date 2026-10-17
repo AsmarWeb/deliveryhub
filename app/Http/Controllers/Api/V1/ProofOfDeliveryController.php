@@ -21,7 +21,7 @@ class ProofOfDeliveryController extends Controller
             'recipient_name' => ['required', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'photo' => [
-                'nullable',
+                'required',
                 'file',
                 'image',
                 'mimes:jpg,jpeg,png,webp',

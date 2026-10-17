@@ -70,7 +70,7 @@ class DriverAssignmentService
             ]);
 
             $driver->update([
-                'is_available' => false,
+                'work_status' => 'busy',
             ]);
 
             $this->transitions->transition(

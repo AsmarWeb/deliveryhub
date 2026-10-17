@@ -22,6 +22,8 @@ class Driver extends Model
         'current_latitude',
         'current_longitude',
         'last_location_at',
+        'max_active_deliveries',
+        'work_status',
     ];
 
     protected function casts(): array
@@ -31,6 +33,7 @@ class Driver extends Model
             'current_latitude' => 'decimal:7',
             'current_longitude' => 'decimal:7',
             'last_location_at' => 'datetime',
+            'max_active_deliveries' => 'integer',
         ];
     }
 
@@ -42,5 +45,28 @@ class Driver extends Model
     public function assignments(): HasMany
     {
         return $this->hasMany(DeliveryAssignment::class);
+    }
+
+    public function activeDeliveriesCount(): int
+    {
+        return $this->assignments()
+            ->whereIn('status', ['pending', 'accepted'])
+            ->whereHas('delivery', function ($query) {
+                $query->whereIn('status', [
+                    'assigned',
+                    'accepted',
+                    'pickup',
+                    'in_transit',
+                ]);
+            })
+            ->count();
+    }
+
+    public function hasDeliveryCapacity(): bool
+    {
+        return $this->status === 'active'
+            && $this->is_available
+            && $this->activeDeliveriesCount()
+            < $this->max_active_deliveries;
     }
 }

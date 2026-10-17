@@ -233,7 +233,8 @@ class DeliveryLifecycleTest extends TestCase
         $delivery = $this->createDelivery();
         $this->assignAndAccept($delivery);
         $this->assertSame(DeliveryStatus::Accepted, $delivery->fresh()->status);
-        $this->assertFalse((bool) $this->driver->fresh()->is_available);
+        $this->assertTrue((bool) $this->driver->fresh()->is_available);
+        $this->assertSame('busy', $this->driver->fresh()->work_status);
     }
 
     public function test_driver_cannot_start_transit_before_pickup(): void

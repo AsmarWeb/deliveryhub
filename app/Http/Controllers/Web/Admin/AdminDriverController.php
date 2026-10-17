@@ -39,10 +39,18 @@ class AdminDriverController extends Controller
             ->withCount([
                 'assignments',
                 'assignments as active_assignments_count' =>
-                fn($query) => $query->whereIn(
-                    'status',
-                    ['pending', 'accepted']
-                ),
+                fn($query) => $query
+                    ->whereIn('status', ['pending', 'accepted'])
+                    ->whereHas(
+                        'delivery',
+                        fn($delivery) =>
+                        $delivery->whereIn('status', [
+                            'assigned',
+                            'accepted',
+                            'pickup',
+                            'in_transit',
+                        ])
+                    ),
             ])
             ->when(
                 $filters['search'] ?? null,

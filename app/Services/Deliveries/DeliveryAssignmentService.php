@@ -36,12 +36,10 @@ class DeliveryAssignmentService
                 ->lockForUpdate()
                 ->findOrFail($driver->id);
 
-            if (
-                $driver->status !== 'active' ||
-                ! $driver->is_available
-            ) {
+            if (! $driver->hasDeliveryCapacity()) {
                 throw ValidationException::withMessages([
-                    'driver_id' => 'Driver is not available.',
+                    'driver_id' =>
+                    'Driver is unavailable or has reached delivery capacity.',
                 ]);
             }
 

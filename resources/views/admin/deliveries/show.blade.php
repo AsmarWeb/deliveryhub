@@ -306,12 +306,6 @@
                     </div>
 
                 </div>
-
-                <p class="mt-4 text-xs text-slate-500">
-                    {{ $ar
-                        ? 'الملفات محفوظة بشكل خاص. سنضيف عرضها عبر مسارات إدارة محمية.'
-                        : 'Files are private. Protected admin viewing routes will be added.' }}
-                </p>
             @else
                 <p class="text-sm text-slate-400">
                     {{ $ar ? 'لا يوجد إثبات تسليم حتى الآن' : 'No proof of delivery available' }}

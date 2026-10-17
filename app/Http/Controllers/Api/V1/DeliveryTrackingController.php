@@ -7,6 +7,7 @@ use App\Models\Delivery;
 use App\Models\DeliveryAssignment;
 use App\Models\Driver;
 use App\Models\Merchant;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -50,11 +51,41 @@ class DeliveryTrackingController extends Controller
                 'occurred_at' => $history->created_at?->toIso8601String(),
             ]);
 
+        $driverLocation = null;
+
+        if (in_array($delivery->status->value, [
+            'accepted', 'pickup', 'in_transit',
+        ], true)) {
+            $location = DB::table('delivery_driver_locations')
+                ->join(
+                    'delivery_assignments',
+                    'delivery_assignments.driver_id',
+                    '=',
+                    'delivery_driver_locations.driver_id'
+                )
+                ->where('delivery_driver_locations.delivery_id', $delivery->id)
+                ->where('delivery_assignments.delivery_id', $delivery->id)
+                ->where('delivery_assignments.status', 'accepted')
+                ->where('delivery_driver_locations.recorded_at', '>=', now()->subSeconds(60))
+                ->where('delivery_driver_locations.recorded_at', '<=', now())
+                ->select('delivery_driver_locations.*')
+                ->first();
+
+            if ($location) {
+                $driverLocation = [
+                    'latitude' => (float) $location->latitude,
+                    'longitude' => (float) $location->longitude,
+                    'last_updated_at' => $location->recorded_at,
+                ];
+            }
+        }
+
         return response()->json([
             'data' => [
                 'tracking_number' => $delivery->tracking_number,
                 'status' => $delivery->status->value,
                 'timeline' => $timeline,
+                'driver_location' => $driverLocation,
             ],
         ]);
     }

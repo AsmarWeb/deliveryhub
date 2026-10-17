@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\DriverProfileController;
 use App\Http\Controllers\Api\V1\DriverLocationController;
 use App\Http\Controllers\Api\V1\MerchantDeliveryPriceApprovalController;
 use App\Http\Controllers\Api\V1\Auth\SelfRegistrationController;
+use App\Http\Controllers\Api\V1\Auth\ApplicationStatusController;
 
 Route::prefix('v1')->group(function () {
 
@@ -42,6 +43,11 @@ Route::prefix('v1')->group(function () {
 
         Route::post('/register/merchant', [SelfRegistrationController::class, 'merchant'])->middleware('throttle:5,1');
         Route::post('/register/driver', [SelfRegistrationController::class, 'driver'])->middleware('throttle:5,1');
+
+        Route::middleware('auth:sanctum')->get(
+            '/application-status',
+            ApplicationStatusController::class
+        );
     });
 
 

@@ -66,11 +66,28 @@ class AdminDeliveryController extends Controller
             ->with('user')
             ->where('status', 'active')
             ->where('is_available', true)
-            ->whereDoesntHave('assignments', function ($query) {
-                $query->whereIn('status', ['pending', 'accepted']);
-            })
+            ->withCount([
+                'assignments as active_deliveries_count' =>
+                fn($query) => $query
+                    ->whereIn('status', ['pending', 'accepted'])
+                    ->whereHas(
+                        'delivery',
+                        fn($delivery) =>
+                        $delivery->whereIn('status', [
+                            'assigned',
+                            'accepted',
+                            'pickup',
+                            'in_transit',
+                        ])
+                    ),
+            ])
             ->orderBy('id')
-            ->get();
+            ->get()
+            ->filter(fn ($driver) =>
+                (int) $driver->active_deliveries_count
+                    < (int) $driver->max_active_deliveries
+            )
+            ->values();
 
 
         return view('admin.deliveries.show', compact('delivery', 'availableDrivers'));

@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Laratrust\Models\Role;
 use Tests\TestCase;
+use Illuminate\Http\UploadedFile;
 
 class DeliveryLifecycleTest extends TestCase
 {
@@ -285,10 +286,11 @@ class DeliveryLifecycleTest extends TestCase
             ->assertOk();
 
         $this->actingAs($this->driverUser)
-            ->postJson("/api/v1/driver/deliveries/{$delivery->id}/proof", [
+            ->post("/api/v1/driver/deliveries/{$delivery->id}/proof", [
                 'recipient_name' => 'Test Recipient',
                 'notes' => 'Received in good condition',
-            ])->assertCreated();
+                'photo' => $this->fakeProofPhoto('proof.jpg'),
+            ], ['Accept' => 'application/json'])->assertCreated();
 
         $this->assertSame(DeliveryStatus::Delivered, $delivery->fresh()->status);
         $this->assertNotNull($delivery->fresh()->delivered_at);
@@ -319,10 +321,16 @@ class DeliveryLifecycleTest extends TestCase
 
         $url = "/api/v1/driver/deliveries/{$delivery->id}/proof";
         $this->actingAs($this->driverUser)
-            ->postJson($url, ['recipient_name' => 'Recipient'])
+            ->post($url, [
+                'recipient_name' => 'Recipient',
+                'photo' => $this->fakeProofPhoto('proof-1.jpg'),
+            ], ['Accept' => 'application/json'])
             ->assertCreated();
         $this->actingAs($this->driverUser)
-            ->postJson($url, ['recipient_name' => 'Recipient'])
+            ->post($url, [
+                'recipient_name' => 'Recipient',
+                'photo' => $this->fakeProofPhoto('proof-2.jpg'),
+            ], ['Accept' => 'application/json'])
             ->assertUnprocessable();
         $this->assertSame(1, \App\Models\ProofOfDelivery::where('delivery_id', $delivery->id)->count());
     }
@@ -418,6 +426,16 @@ class DeliveryLifecycleTest extends TestCase
 
         $this->assertSame(DeliveryStatus::Matching, $delivery->fresh()->status);
         $this->assertSame($before, $delivery->statusHistories()->count());
+    }
+
+
+    private function fakeProofPhoto(string $filename): UploadedFile
+    {
+        $image = base64_decode(
+            '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////2wBDAf//////////////////////////////////////////////////////////////////////////////////////wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAT/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdAB//2Q=='
+        );
+
+        return UploadedFile::fake()->createWithContent($filename, $image);
     }
 
     private function approvePrice(Delivery $delivery): void

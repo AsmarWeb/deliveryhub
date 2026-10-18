@@ -38,6 +38,12 @@
                 'label' => $isAr ? 'إدارة السائقين' : 'Manage Drivers',
                 'icon' => 'truck',
             ],
+            [
+                'route' => 'admin.merchant-crm.index',
+                'active' => 'admin.merchant-crm.*',
+                'label' => $isAr ? 'إدارة علاقات التجار CRM' : 'Merchant CRM',
+                'icon' => 'crm',
+            ],
         ];
     }
 
@@ -162,6 +168,16 @@
                                 <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
 
                                 <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                            </svg>
+                        @break
+
+                        @case('crm')
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="3" />
+                                <circle cx="9" cy="9" r="2" />
+                                <path d="M5.5 16c.5-2 2-3 3.5-3s3 1 3.5 3" />
+                                <path d="M15 8h3M15 12h3M15 16h3" />
                             </svg>
                         @break
 

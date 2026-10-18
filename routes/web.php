@@ -7,6 +7,7 @@ use App\Http\Controllers\Web\Admin\AdminDashboardController;
 use App\Http\Controllers\Web\Admin\AdminDriverController;
 use App\Http\Controllers\Web\Admin\AdminMerchantController;
 use App\Http\Controllers\Web\Admin\AdminDeliveryDispatchController;
+use App\Http\Controllers\Web\Admin\MerchantCrmController;
 
 use App\Http\Controllers\Auth\WebAuthController;
 use App\Http\Controllers\Web\DashboardController;
@@ -19,6 +20,9 @@ use App\Http\Controllers\Web\DriverProofOfDeliveryController;
 use App\Http\Controllers\Web\MerchantProofOfDeliveryController;
 use Illuminate\Support\Facades\Route;
 
+
+use App\Http\Controllers\Web\HomeController;
+
 Route::get('/language/{locale}', function (string $locale) {
     abort_unless(in_array($locale, ['ar', 'en'], true), 404);
 
@@ -27,7 +31,30 @@ Route::get('/language/{locale}', function (string $locale) {
     return redirect()->back(fallback: route('web.dashboard'));
 })->middleware('auth')->name('language.switch');
 
-Route::view('/', 'welcome');
+Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// Add these once:
+Route::get('/sitemap.xml', function () {
+    $xml = '<?xml version="1.0" encoding="UTF-8"?>'
+        . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        . '<url><loc>' . e(url('/')) . '</loc></url>'
+        . '<url><loc>' . e(url('/?lang=ar')) . '</loc></url>'
+        . '</urlset>';
+    return response($xml, 200)->header('Content-Type', 'application/xml; charset=UTF-8');
+})->name('sitemap');
+
+Route::get('/robots.txt', function () {
+    return response("User-agent: *\nAllow: /\nSitemap: " . url('/sitemap.xml') . "\n", 200)
+        ->header('Content-Type', 'text/plain; charset=UTF-8');
+});
+
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/merchant-crm', [MerchantCrmController::class, 'index'])->name('merchant-crm.index');
+    Route::get('/merchant-crm/{lead}', [MerchantCrmController::class, 'show'])->name('merchant-crm.show');
+    Route::patch('/merchant-crm/{lead}', [MerchantCrmController::class, 'update'])->name('merchant-crm.update');
+    Route::post('/merchant-crm/{lead}/notes', [MerchantCrmController::class, 'note'])->name('merchant-crm.note');
+    Route::post('/merchant-crm/{lead}/analyze', [MerchantCrmController::class, 'analyze'])->middleware('throttle:10,1')->name('merchant-crm.analyze');
+});
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [
@@ -238,3 +265,9 @@ Route::middleware('auth')->group(function () {
         ->where('type', 'photo|signature')
         ->name('admin.deliveries.proof.file');
 });
+
+
+// Public merchant registration
+Route::post('/merchant-leads', [\App\Http\Controllers\Web\MerchantLeadController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('merchant-leads.store');

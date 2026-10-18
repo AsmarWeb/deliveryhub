@@ -35,4 +35,7 @@ return [
         ],
     ],
 
+    'deliveryhub' => [
+        'leads_email' => env('DELIVERYHUB_LEADS_EMAIL'),
+    ],
 ];

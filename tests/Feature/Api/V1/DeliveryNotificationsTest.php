@@ -130,8 +130,43 @@ class DeliveryNotificationsTest extends TestCase
 
     public function test_unlisted_status_creates_no_notifications(): void
     {
-        (new SendDeliveryStatusNotifications())->handle($this->eventFor('priced'));
+        (new SendDeliveryStatusNotifications())->handle($this->eventFor('pending_pricing'));
         $this->assertSame(0, $this->merchantUser->notifications()->count());
         $this->assertSame(0, $this->driverUser->notifications()->count());
+    }
+
+    public function test_matching_in_transit_and_cancellation_notify_only_the_merchant_once_per_event(): void
+    {
+        $listener = new SendDeliveryStatusNotifications();
+        foreach (['priced', 'matching', 'in_transit', 'cancelled'] as $status) {
+            $event = $this->eventFor($status);
+            $listener->handle($event);
+            $listener->handle($event);
+        }
+        $this->assertSame(4, $this->merchantUser->notifications()->count());
+        $this->assertSame(0, $this->driverUser->notifications()->count());
+        $this->assertSame(0, $this->unrelatedUser->notifications()->count());
+    }
+
+    public function test_driver_offer_links_to_the_original_assignment_on_event_replay(): void
+    {
+        $original = DeliveryAssignment::create([
+            'delivery_id' => $this->delivery->id, 'driver_id' => $this->driver->id,
+            'status' => 'expired', 'assigned_at' => now()->subMinutes(3),
+        ]);
+        $otherDriver = Driver::factory()->create();
+        DeliveryAssignment::create([
+            'delivery_id' => $this->delivery->id, 'driver_id' => $otherDriver->id,
+            'status' => 'pending', 'assigned_at' => now(),
+        ]);
+        $event = $this->eventFor('assigned');
+        $event->history->update(['metadata' => ['assignment_id' => $original->id]]);
+        $listener = new SendDeliveryStatusNotifications();
+        $listener->handle($event);
+        $listener->handle($event);
+        $this->assertSame($original->id, $this->driverUser->notifications()->first()->data['assignment_id']);
+        $this->assertNull($this->merchantUser->notifications()->first()->data['assignment_id']);
+        $this->assertSame(0, $otherDriver->user->notifications()->count());
+        $this->assertSame(1, $this->driverUser->notifications()->count());
     }
 }

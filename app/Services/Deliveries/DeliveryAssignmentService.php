@@ -93,7 +93,7 @@ class DeliveryAssignmentService
                 DeliveryStatus::Assigned,
                 $actor,
                 ($automatic ? 'Automatically offered to driver #' : 'Delivery assigned to driver #') . $driver->id,
-                $metadata
+                $metadata + ['assignment_id' => $assignment->id]
             );
 
             return $assignment->load(['driver', 'delivery']);

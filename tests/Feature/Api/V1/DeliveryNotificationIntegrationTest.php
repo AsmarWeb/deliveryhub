@@ -100,13 +100,13 @@ class DeliveryNotificationIntegrationTest extends TestCase
         );
 
         $this->assertSame(
-            1,
+            3,
             $user->notifications()->count()
         );
 
         $this->assertSame(
             'assigned',
-            $user->notifications()->first()->data['status']
+            $user->notifications()->get()->first(fn ($notification) => $notification->data['status'] === 'assigned')->data['status']
         );
     }
 }

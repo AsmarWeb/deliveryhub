@@ -11,27 +11,10 @@ class AutomationSubscriptionPolicy
 {
     public function activeSubscription(Merchant $merchant): MerchantSubscription
     {
-        $subscription = MerchantSubscription::query()
-            ->with(['plan', 'cashierSubscription'])
-            ->where('merchant_id', $merchant->id)
-            ->where('status', 'active')
-            ->where('starts_at', '<=', now())
-            ->where('ends_at', '>', now())
-            ->latest('id')
-            ->first();
-
-        if (! $subscription || ! $subscription->plan?->is_active) {
+        $subscription = app(MerchantSubscriptionAccess::class)->current($merchant, true);
+        if (! $subscription) {
             throw ValidationException::withMessages([
-                'subscription' => 'An active subscription is required.',
-            ]);
-        }
-
-        if (
-            ! $subscription->cashierSubscription ||
-            ! $subscription->cashierSubscription->valid()
-        ) {
-            throw ValidationException::withMessages([
-                'subscription' => 'A valid Stripe subscription is required.',
+                'subscription' => 'A confirmed paid Stripe subscription is required.',
             ]);
         }
 

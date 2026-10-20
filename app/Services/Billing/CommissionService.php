@@ -25,17 +25,7 @@ class CommissionService
                 return $existing;
             }
 
-            $subscription = MerchantSubscription::query()
-                ->with('plan')
-                ->where('merchant_id', $delivery->merchant_id)
-                ->where('status', 'active')
-                ->where('starts_at', '<=', now())
-                ->where(function ($query) {
-                    $query->whereNull('ends_at')
-                        ->orWhere('ends_at', '>', now());
-                })
-                ->latest('starts_at')
-                ->first();
+            $subscription = app(MerchantSubscriptionAccess::class)->current($delivery->merchant);
 
             if (! $subscription || ! $subscription->plan || ! $subscription->plan->is_active) {
                 throw ValidationException::withMessages([

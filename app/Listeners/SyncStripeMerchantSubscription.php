@@ -45,8 +45,12 @@ class SyncStripeMerchantSubscription
             ->where('stripe_id', $stripeId)
             ->first();
 
-        if ($subscription) {
-            $this->sync->sync($subscription, true);
+        if (! $subscription) {
+            // Stripe may deliver invoice.paid before subscription.created.
+            // A non-2xx response makes Stripe retry after Cashier has stored it.
+            throw new \RuntimeException('Subscription not yet available; retry invoice webhook.');
         }
+
+        $this->sync->sync($subscription, true, $invoice);
     }
 }

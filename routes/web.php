@@ -303,3 +303,16 @@ Route::middleware(['auth', 'role:admin'])
         Route::post('/', [AdminMerchantSubscriptionController::class, 'store'])
             ->name('store');
     });
+
+// Override Cashier's webhook action while retaining its signature middleware.
+Route::post(config('cashier.path', 'stripe') . '/webhook', [
+    \App\Http\Controllers\Billing\StripeWebhookController::class, 'handleWebhook',
+])->name('cashier.webhook');
+
+foreach (['success', 'cancel', 'return'] as $billingOutcome) {
+    Route::get('/billing/' . $billingOutcome, function () use ($billingOutcome) {
+        return response()->view('billing.return', ['outcome' => $billingOutcome])
+            ->header('Cache-Control', 'no-store')
+            ->header('Referrer-Policy', 'no-referrer');
+    })->name('billing.' . $billingOutcome);
+}

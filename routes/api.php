@@ -27,28 +27,27 @@ Route::prefix('v1')->group(function () {
     Route::middleware([
         'auth:sanctum',
         'account.active',
-        'throttle:5,1',
     ])->prefix('merchant/billing')->group(function () {
         Route::post('/checkout', [
             StripeBillingController::class,
             'checkout',
-        ])->name('merchant.billing.checkout');
+        ])->middleware('throttle:billing-write')->name('merchant.billing.checkout');
 
         Route::post('/portal', [
             StripeBillingController::class,
             'portal',
-        ])->name('merchant.billing.portal');
+        ])->middleware('throttle:billing-write')->name('merchant.billing.portal');
 
 
         Route::get('/plans', [
             StripeBillingController::class,
             'plans',
-        ])->name('merchant.billing.plans');
+        ])->middleware('throttle:billing-read')->name('merchant.billing.plans');
 
         Route::get('/current', [
             StripeBillingController::class,
             'current',
-        ])->name('merchant.billing.current');
+        ])->middleware('throttle:billing-read')->name('merchant.billing.current');
 
 
     });

@@ -53,6 +53,10 @@ class StripeBillingController extends Controller
             ], 503);
         }
 
+        if (config('services.stripe.prices.growth') === config('services.stripe.prices.business')) {
+            return response()->json(['message' => 'Stripe plan prices must be distinct.'], 503);
+        }
+
         if (! config('cashier.secret')) {
             return response()->json([
                 'message' => 'Stripe is not configured.',
@@ -66,6 +70,10 @@ class StripeBillingController extends Controller
         }
 
         try {
+            if (! app(\App\Services\Billing\StripePlanPrice::class)->verify($plan, $priceId)) {
+                return response()->json(['message' => 'Stripe price does not match the monthly plan.'], 503);
+            }
+
             $checkout = $merchant
                 ->newSubscription('default', $priceId)
                 ->checkout([
@@ -102,6 +110,7 @@ class StripeBillingController extends Controller
                 'currency',
                 'commission_rate',
                 'monthly_delivery_limit',
+                'max_active_automations',
             ]);
 
         return response()->json([
@@ -121,19 +130,19 @@ class StripeBillingController extends Controller
             ], 403);
         }
 
-        $subscription = \App\Models\MerchantSubscription::query()
-            ->with('plan:id,name,slug,monthly_price,currency,commission_rate,monthly_delivery_limit')
-            ->where('merchant_id', $merchant->id)
-            ->where('status', 'active')
-            ->where('starts_at', '<=', now())
-            ->where('ends_at', '>', now())
-            ->orderByDesc('ends_at')
-            ->first();
+        $access = app(\App\Services\Billing\MerchantSubscriptionAccess::class);
+        $subscription = $access->current($merchant)
+            ?? $merchant->merchantSubscriptions()->with(['plan', 'cashierSubscription'])->latest('id')->first();
 
         return response()->json([
             'data' => $subscription ? [
                 'id' => $subscription->id,
                 'status' => $subscription->status,
+                'has_access' => $access->allows($subscription),
+                'can_use_automations' => $access->allows($subscription, true)
+                    && $subscription->plan?->max_active_automations > 0,
+                'stripe_status' => $subscription->cashierSubscription?->stripe_status,
+                'automation_usage' => \App\Models\RecurringDelivery::where('merchant_id', $merchant->id)->where('is_active', true)->count(),
                 'starts_at' => $subscription->starts_at,
                 'ends_at' => $subscription->ends_at,
                 'plan' => $subscription->plan,
@@ -159,7 +168,7 @@ class StripeBillingController extends Controller
 
         try {
             $session = $merchant->billingPortalUrl(
-                config('app.url')
+                route('billing.return')
             );
 
             return response()->json([

@@ -3,6 +3,7 @@
 namespace App\Services\Deliveries;
 
 use App\Enums\DeliveryStatus;
+use App\Jobs\AutoCompleteDelivery;
 use App\Models\Delivery;
 use App\Models\DeliveryAssignment;
 use App\Models\Driver;
@@ -94,6 +95,9 @@ class ProofOfDeliveryService
                     $actor,
                     'Delivery confirmed with proof of delivery'
                 );
+
+                AutoCompleteDelivery::dispatch($delivery->id)
+                    ->afterCommit();
 
                 return [
                     'proof' => $proof,

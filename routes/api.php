@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\V1\StripeBillingController;
 use App\Http\Controllers\Api\V1\MerchantAddressController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\NotificationController;
@@ -22,6 +23,36 @@ use App\Http\Controllers\Api\V1\Auth\SelfRegistrationController;
 use App\Http\Controllers\Api\V1\Auth\ApplicationStatusController;
 
 Route::prefix('v1')->group(function () {
+
+    Route::middleware([
+        'auth:sanctum',
+        'account.active',
+        'throttle:5,1',
+    ])->prefix('merchant/billing')->group(function () {
+        Route::post('/checkout', [
+            StripeBillingController::class,
+            'checkout',
+        ])->name('merchant.billing.checkout');
+
+        Route::post('/portal', [
+            StripeBillingController::class,
+            'portal',
+        ])->name('merchant.billing.portal');
+
+
+        Route::get('/plans', [
+            StripeBillingController::class,
+            'plans',
+        ])->name('merchant.billing.plans');
+
+        Route::get('/current', [
+            StripeBillingController::class,
+            'current',
+        ])->name('merchant.billing.current');
+
+
+    });
+
 
     Route::middleware([
         'auth:sanctum',
@@ -186,4 +217,27 @@ Route::prefix('v1')->group(function () {
             'store',
         ]);
     });
+});
+
+
+// DELIVERYHUB MERCHANT AUTOMATION ROUTES
+Route::middleware([
+    'auth:sanctum',
+    'account.active',
+    'throttle:30,1',
+])->prefix('v1/merchant/automations')->group(function () {
+    Route::get('/', [
+        \App\Http\Controllers\Api\V1\RecurringDeliveryController::class,
+        'index',
+    ])->name('merchant.automations.index');
+
+    Route::post('/', [
+        \App\Http\Controllers\Api\V1\RecurringDeliveryController::class,
+        'store',
+    ])->name('merchant.automations.store');
+
+    Route::patch('/{recurringDelivery}/status', [
+        \App\Http\Controllers\Api\V1\RecurringDeliveryController::class,
+        'updateStatus',
+    ])->name('merchant.automations.status');
 });

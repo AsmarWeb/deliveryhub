@@ -7,8 +7,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Delivery;
 use App\Models\Merchant;
 use App\Services\Deliveries\DeliveryTransitionService;
+use App\Services\Pricing\AutomaticDeliveryPricingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class DeliveryTransitionController extends Controller
@@ -16,7 +18,8 @@ class DeliveryTransitionController extends Controller
     public function __invoke(
         Request $request,
         Delivery $delivery,
-        DeliveryTransitionService $service
+        DeliveryTransitionService $service,
+        AutomaticDeliveryPricingService $autoPricing
     ): JsonResponse {
         $user = $request->user();
 
@@ -46,8 +49,6 @@ class DeliveryTransitionController extends Controller
 
         $to = DeliveryStatus::from($data['status']);
 
-        // This first endpoint is deliberately limited to submission.
-        // Operational transitions will use dedicated authorized actions.
         abort_unless(
             $delivery->status === DeliveryStatus::Draft
                 && $to === DeliveryStatus::PendingPricing,
@@ -55,12 +56,25 @@ class DeliveryTransitionController extends Controller
             'This transition is not available through this endpoint.'
         );
 
-        $updated = $service->transition(
+        $updated = DB::transaction(function () use (
             $delivery,
             $to,
             $user,
-            $data['reason'] ?? null
-        );
+            $data,
+            $service,
+            $autoPricing
+        ) {
+            $submitted = $service->transition(
+                $delivery,
+                $to,
+                $user,
+                $data['reason'] ?? null
+            );
+
+            $priced = $autoPricing->price($submitted, $user);
+
+            return $priced ?? $submitted->refresh();
+        });
 
         return response()->json([
             'message' => 'Delivery status updated successfully.',

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Web\Admin\AdminMerchantSubscriptionController;
+
 use App\Http\Controllers\Web\Admin\AdminDeliveryController;
 use App\Http\Controllers\Web\Admin\AdminDeliveryCompletionController;
 use App\Http\Controllers\Web\Admin\AdminProofOfDeliveryController;
@@ -271,3 +273,33 @@ Route::middleware('auth')->group(function () {
 Route::post('/merchant-leads', [\App\Http\Controllers\Web\MerchantLeadController::class, 'store'])
     ->middleware('throttle:10,1')
     ->name('merchant-leads.store');
+
+
+// Delivery pricing settings - administrators only.
+Route::middleware(['auth', 'role:admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('/pricing', [
+            \App\Http\Controllers\Web\Admin\AdminPricingSettingsController::class,
+            'edit',
+        ])->name('pricing.edit');
+
+        Route::put('/pricing', [
+            \App\Http\Controllers\Web\Admin\AdminPricingSettingsController::class,
+            'update',
+        ])->name('pricing.update');
+    });
+
+
+// Merchant subscription administration
+Route::middleware(['auth', 'role:admin'])
+    ->prefix('admin/subscriptions')
+    ->name('admin.subscriptions.')
+    ->group(function () {
+        Route::get('/', [AdminMerchantSubscriptionController::class, 'index'])
+            ->name('index');
+
+        Route::post('/', [AdminMerchantSubscriptionController::class, 'store'])
+            ->name('store');
+    });

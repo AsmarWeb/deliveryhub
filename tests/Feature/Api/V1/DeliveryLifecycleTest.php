@@ -126,6 +126,61 @@ class DeliveryLifecycleTest extends TestCase
         return Delivery::findOrFail($response->json('data.id'));
     }
 
+    public function test_submission_stays_pending_when_auto_pricing_disabled(): void
+    {
+        \App\Models\DeliveryPricingSetting::create([
+            'base_fee' => 10,
+            'price_per_km' => 1.5,
+            'minimum_fee' => 10,
+            'maximum_distance_km' => 50,
+            'auto_pricing_enabled' => false,
+        ]);
+
+        $delivery = $this->createDelivery();
+
+        $this->actingAs($this->merchantUser)
+            ->postJson("/api/v1/deliveries/{$delivery->id}/transition", [
+                'status' => 'pending_pricing',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'pending_pricing');
+
+        $this->assertNull($delivery->fresh()->delivery_fee);
+    }
+
+    public function test_submission_automatically_prices_when_enabled(): void
+    {
+        \App\Models\DeliveryPricingSetting::create([
+            'base_fee' => 10,
+            'price_per_km' => 1.5,
+            'minimum_fee' => 10,
+            'maximum_distance_km' => 50,
+            'auto_pricing_enabled' => true,
+        ]);
+
+        $delivery = $this->createDelivery();
+
+        $this->actingAs($this->merchantUser)
+            ->postJson("/api/v1/deliveries/{$delivery->id}/transition", [
+                'status' => 'pending_pricing',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'priced');
+
+        $this->assertSame(
+            DeliveryStatus::Priced,
+            $delivery->fresh()->status
+        );
+
+        $this->assertNotNull($delivery->fresh()->delivery_fee);
+
+        $this->assertDatabaseHas('delivery_status_histories', [
+            'delivery_id' => $delivery->id,
+            'from_status' => 'pending_pricing',
+            'to_status' => 'priced',
+        ]);
+    }
+
     private function submitAndPrice(Delivery $delivery): void
     {
         $this->actingAs($this->merchantUser)
@@ -274,13 +329,15 @@ class DeliveryLifecycleTest extends TestCase
         $this->assertSame(DeliveryStatus::InTransit, $delivery->fresh()->status);
     }
 
-    public function test_pod_delivers_and_admin_completes_delivery(): void
+    public function test_pod_automatically_completes_delivery(): void
     {
         $delivery = $this->createDelivery();
         $this->assignAndAccept($delivery);
+
         $this->actingAs($this->driverUser)
             ->postJson("/api/v1/driver/deliveries/{$delivery->id}/pickup")
             ->assertOk();
+
         $this->actingAs($this->driverUser)
             ->postJson("/api/v1/driver/deliveries/{$delivery->id}/start-transit")
             ->assertOk();
@@ -292,19 +349,31 @@ class DeliveryLifecycleTest extends TestCase
                 'photo' => $this->fakeProofPhoto('proof.jpg'),
             ], ['Accept' => 'application/json'])->assertCreated();
 
-        $this->assertSame(DeliveryStatus::Delivered, $delivery->fresh()->status);
+        $this->assertSame(
+            DeliveryStatus::Completed,
+            $delivery->fresh()->status
+        );
+
         $this->assertNotNull($delivery->fresh()->delivered_at);
+
         $this->assertDatabaseHas('proof_of_deliveries', [
             'delivery_id' => $delivery->id,
             'driver_id' => $this->driver->id,
         ]);
 
+        $this->assertDatabaseHas('delivery_status_histories', [
+            'delivery_id' => $delivery->id,
+            'from_status' => DeliveryStatus::Delivered->value,
+            'to_status' => DeliveryStatus::Completed->value,
+        ]);
+
+        $this->assertSame(10, $delivery->statusHistories()->count());
+
+        // A second completion must not create another transition.
         $this->actingAs($this->admin)
             ->postJson("/api/v1/deliveries/{$delivery->id}/complete")
-            ->assertOk();
+            ->assertUnprocessable();
 
-        $this->assertSame(DeliveryStatus::Completed, $delivery->fresh()->status);
-        $this->assertTrue((bool) $this->driver->fresh()->is_available);
         $this->assertSame(10, $delivery->statusHistories()->count());
     }
 

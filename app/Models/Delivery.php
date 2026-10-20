@@ -68,6 +68,11 @@ class Delivery extends Model
         return $this->hasMany(DeliveryStatusHistory::class);
     }
 
+    public function commission(): HasOne
+    {
+        return $this->hasOne(DeliveryCommission::class);
+    }
+
     public function proofOfDelivery(): HasOne
     {
         return $this->hasOne(ProofOfDelivery::class);

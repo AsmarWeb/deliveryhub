@@ -38,4 +38,15 @@ return [
     'deliveryhub' => [
         'leads_email' => env('DELIVERYHUB_LEADS_EMAIL'),
     ],
+
+    'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        'prices' => [
+            'growth' => env('STRIPE_PRICE_GROWTH'),
+            'business' => env('STRIPE_PRICE_BUSINESS'),
+        ],
+    ],
+
 ];

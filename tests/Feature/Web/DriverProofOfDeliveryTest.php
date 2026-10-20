@@ -93,7 +93,7 @@ class DriverProofOfDeliveryTest extends TestCase
 
         $this->assertDatabaseHas('deliveries', [
             'id' => $assignment->delivery_id,
-            'status' => DeliveryStatus::Delivered->value,
+            'status' => DeliveryStatus::Completed->value,
         ]);
 
         $this->assertNotNull(

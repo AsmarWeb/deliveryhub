@@ -9,6 +9,7 @@
         $isAr = app()->getLocale() === 'ar';
 
         $statuses = [
+            'pending' => $isAr ? 'بانتظار الموافقة' : 'Pending Approval',
             'active' => $isAr ? 'نشط' : 'Active',
             'inactive' => $isAr ? 'غير نشط' : 'Inactive',
         ];
@@ -124,6 +125,7 @@
                                 $statusClass = match ($status) {
                                     'active' => 'bg-emerald-500/10 text-emerald-400',
                                     'inactive' => 'bg-red-500/10 text-red-400',
+                                    'pending' => 'bg-amber-500/10 text-amber-400',
                                     default => 'bg-slate-500/10 text-slate-400',
                                 };
 
@@ -261,9 +263,29 @@
                                                     ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
                                                     : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' }}">
 
-                                                {{ $nextStatus === 'inactive' ? ($isAr ? 'تعطيل' : 'Deactivate') : ($isAr ? 'تفعيل' : 'Activate') }}
+                                                {{ $status === 'pending'
+                                                ? ($isAr ? 'الموافقة على السائق' : 'Approve Driver')
+                                                : ($nextStatus === 'inactive'
+                                                    ? ($isAr ? 'تعطيل' : 'Deactivate')
+                                                    : ($isAr ? 'تفعيل' : 'Activate')) }}
                                             </button>
                                         </form>
+
+                                        @if ($status === 'pending')
+                                            <form method="POST"
+                                                  action="{{ route('admin.drivers.status', $driver) }}">
+                                                @csrf
+                                                @method('PATCH')
+
+                                                <input type="hidden" name="status" value="inactive">
+
+                                                <button type="submit"
+                                                        onclick="return confirm(@js($isAr ? 'هل تريد رفض طلب هذا السائق؟' : 'Reject this driver application?'))"
+                                                        class="rounded-lg bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/20">
+                                                    {{ $isAr ? 'رفض الطلب' : 'Reject Application' }}
+                                                </button>
+                                            </form>
+                                        @endif
 
                                         @if ($cannotDeactivate)
                                             <p class="mt-2 max-w-40 text-xs text-amber-400">

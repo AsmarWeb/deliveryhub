@@ -44,6 +44,18 @@
                 'label' => $isAr ? 'إدارة علاقات التجار CRM' : 'Merchant CRM',
                 'icon' => 'crm',
             ],
+            [
+                'route' => 'admin.pricing.edit',
+                'active' => 'admin.pricing.*',
+                'label' => $isAr ? 'إعدادات التسعير' : 'Pricing Settings',
+                'icon' => 'pricing',
+            ],
+            [
+                'route' => 'admin.subscriptions.index',
+                'active' => 'admin.subscriptions.*',
+                'label' => $isAr ? 'اشتراكات التجار' : 'Subscriptions',
+                'icon' => 'subscription',
+            ],
         ];
     }
 
@@ -181,6 +193,28 @@
                             </svg>
                         @break
 
+                        @case('pricing')
+                            <svg viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="9"/>
+                                <path d="M12 6v12"/>
+                                <path d="M15 9.5c-.6-.7-1.6-1-3-1-1.7 0-3 .8-3 2s1.3 2 3 2 3 .8 3 2-1.3 2-3 2c-1.4 0-2.4-.3-3-1"/>
+                            </svg>
+                        @break
+
+                        @case('subscription')
+                            <svg viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="1.8"
+                                 stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="5" width="18" height="14" rx="2"/>
+                                <path d="M3 10h18M7 15h4"/>
+                            </svg>
+                        @break
+
                         @case('truck')
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 5h12v12H3zM15 9h4l3 4v4h-7z" />
@@ -216,7 +250,10 @@
                 </div>
             @endforeach
         @endif
-    </nav>
+    
+
+
+</nav>
 
     <div class="dh-sidebar-footer">
         <div class="dh-user" title="{{ $user->name }}">

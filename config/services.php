@@ -37,6 +37,8 @@ return [
 
     'deliveryhub' => [
         'leads_email' => env('DELIVERYHUB_LEADS_EMAIL'),
+        'ai_api_key' => env('DELIVERYHUB_AI_API_KEY'),
+        'ai_model' => env('DELIVERYHUB_AI_MODEL', 'gpt-4.1-mini'),
     ],
 
     'stripe' => [

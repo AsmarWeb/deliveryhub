@@ -51,12 +51,22 @@ class MerchantDeliveryPriceApprovalController extends Controller
                 ]);
             }
 
+            $commission = app(\App\Services\Billing\CommissionService::class)->calculate($locked);
+            if ($commission->gross_amount !== $locked->delivery_fee
+                || $commission->currency !== $locked->currency
+                || $commission->status !== 'pending') {
+                throw ValidationException::withMessages([
+                    'commission' => 'Existing commission does not match the approved price.',
+                ]);
+            }
+
             return $transitions->transition(
                 $locked,
                 DeliveryStatus::Matching,
                 $user,
                 'Merchant approved delivery price',
                 [
+                    'commission_id' => $commission->id,
                     'approved_fee' => (string) $locked->delivery_fee,
                     'currency' => $locked->currency,
                 ]

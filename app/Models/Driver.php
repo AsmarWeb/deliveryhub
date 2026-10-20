@@ -13,6 +13,7 @@ class Driver extends Model
 
     protected $fillable = [
         'user_id',
+        'dispatch_enabled', 'dispatch_seen_at', 'dispatch_latitude', 'dispatch_longitude', 'dispatch_location_at',
         'phone',
         'vehicle_type',
         'vehicle_plate',
@@ -30,6 +31,9 @@ class Driver extends Model
     {
         return [
             'is_available' => 'boolean',
+            'dispatch_enabled' => 'boolean',
+            'dispatch_seen_at' => 'datetime', 'dispatch_location_at' => 'datetime',
+            'dispatch_latitude' => 'decimal:7', 'dispatch_longitude' => 'decimal:7',
             'current_latitude' => 'decimal:7',
             'current_longitude' => 'decimal:7',
             'last_location_at' => 'datetime',

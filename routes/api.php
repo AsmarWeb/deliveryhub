@@ -23,6 +23,22 @@ use App\Http\Controllers\Api\V1\Auth\SelfRegistrationController;
 use App\Http\Controllers\Api\V1\Auth\ApplicationStatusController;
 
 Route::prefix('v1')->group(function () {
+    Route::post('/driver/dispatch-presence', \App\Http\Controllers\Api\V1\DispatchPresenceController::class)
+        ->middleware(['auth:sanctum', 'account.active', 'throttle:10,1']);
+    Route::get('/merchant/available-drivers', \App\Http\Controllers\Api\V1\AvailableDriversController::class)
+        ->middleware(['auth:sanctum', 'account.active', 'throttle:60,1']);
+
+    Route::middleware(['auth:sanctum', 'account.active', 'throttle:60,1'])->group(function () {
+        Route::get('/deliveries/{delivery}/cod', [\App\Http\Controllers\Api\V1\DeliveryCodController::class, 'show'])->whereNumber('delivery');
+        Route::post('/deliveries/{delivery}/cod/collect', [\App\Http\Controllers\Api\V1\DeliveryCodController::class, 'collect'])->whereNumber('delivery');
+        Route::post('/deliveries/{delivery}/cod/receive', [\App\Http\Controllers\Api\V1\DeliveryCodController::class, 'receive'])->whereNumber('delivery');
+    });
+
+    Route::post('/deliveries/{delivery}/cancel', \App\Http\Controllers\Api\V1\MerchantDeliveryCancellationController::class)
+        ->whereNumber('delivery')->middleware(['auth:sanctum', 'account.active', 'throttle:10,1']);
+
+    Route::get('/merchant/finance', \App\Http\Controllers\Api\V1\MerchantFinanceController::class)
+        ->middleware(['auth:sanctum', 'account.active', 'throttle:60,1']);
 
     Route::middleware([
         'auth:sanctum',

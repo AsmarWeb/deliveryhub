@@ -49,6 +49,16 @@
             <div class="rounded-2xl border border-slate-800 bg-slate-900 p-5 sm:p-7">
                 <div class="grid gap-5 md:grid-cols-2">
 
+                    <div>
+                        <label for="emirate" class="mb-2 block text-sm font-medium text-slate-300">{{ __('addresses.emirate') }}</label>
+                        <select id="emirate" name="emirate" class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100">
+                            <option value="">—</option>
+                            @foreach (\App\Support\UaeAddressFields::EMIRATES as $emirate)
+                                <option value="{{ $emirate }}" @selected(old('emirate', $address->emirate) === $emirate)>{{ __('addresses.emirates.' . $emirate) }}</option>
+                            @endforeach
+                        </select>
+                        @error('emirate')<p class="mt-2 text-xs text-red-400">{{ $message }}</p>@enderror
+                    </div>
                     @foreach ([
             'label' => 'label',
             'contact_name' => 'contact_name',
@@ -59,6 +69,8 @@
             'street' => 'street',
             'building' => 'building',
             'unit' => 'unit',
+            'landmark' => 'landmark',
+            'makani_number' => 'makani_number',
         ] as $field => $translation)
                         <div>
                             <label for="{{ $field }}" class="mb-2 block text-sm font-medium text-slate-300">
@@ -96,6 +108,16 @@
                         @enderror
                     </div>
 
+                    <div>
+                        <label for="emirate" class="mb-2 block text-sm font-medium text-slate-300">{{ __('addresses.emirate') }}</label>
+                        <select id="emirate" name="emirate" class="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100">
+                            <option value="">—</option>
+                            @foreach (\App\Support\UaeAddressFields::EMIRATES as $emirate)
+                                <option value="{{ $emirate }}" @selected(old('emirate', $address->emirate) === $emirate)>{{ __('addresses.emirates.' . $emirate) }}</option>
+                            @endforeach
+                        </select>
+                        @error('emirate')<p class="mt-2 text-xs text-red-400">{{ $message }}</p>@enderror
+                    </div>
                     @foreach ([
             'latitude' => [-90, 90],
             'longitude' => [-180, 180],

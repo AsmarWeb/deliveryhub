@@ -34,6 +34,7 @@ class MerchantAddressController extends Controller
 
     private function validatedData(Request $request): array
     {
+        \App\Support\UaeAddressFields::prepare($request);
         return $request->validate([
             'label' => ['nullable', 'string', 'max:255'],
             'contact_name' => ['nullable', 'string', 'max:255'],
@@ -48,7 +49,7 @@ class MerchantAddressController extends Controller
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'delivery_instructions' => ['nullable', 'string', 'max:5000'],
-        ]);
+        ] + \App\Support\UaeAddressFields::rules($request));
     }
 
     public function index(Request $request): View

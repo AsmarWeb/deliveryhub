@@ -1,6 +1,18 @@
 <?php
 
 return [
+    'emirate' => 'Emirate (optional)',
+    'landmark' => 'Landmark (optional)',
+    'makani_number' => 'Makani — Dubai only, 10 digits (optional)',
+    'emirates' => [
+        'abu_dhabi' => 'Abu Dhabi',
+        'dubai' => 'Dubai',
+        'sharjah' => 'Sharjah',
+        'ajman' => 'Ajman',
+        'umm_al_quwain' => 'Umm Al Quwain',
+        'ras_al_khaimah' => 'Ras Al Khaimah',
+        'fujairah' => 'Fujairah',
+    ],
     'title' => 'Address Book',
     'subtitle' => 'Manage your store pickup and delivery addresses.',
     'add' => 'Add Address',

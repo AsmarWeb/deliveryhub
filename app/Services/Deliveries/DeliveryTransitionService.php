@@ -51,6 +51,22 @@ class DeliveryTransitionService
 
             $delivery->save();
 
+            // Update only an existing approval snapshot; never backfill using a later plan rate.
+            if (in_array($to, [DeliveryStatus::Completed, DeliveryStatus::Cancelled], true)) {
+                \App\Models\DeliveryCommission::query()
+                    ->where('delivery_id', $delivery->id)
+                    ->where('merchant_id', $delivery->merchant_id)
+                    ->where('status', 'pending')
+                    ->update([
+                        'status' => $to === DeliveryStatus::Completed ? 'earned' : 'cancelled',
+                        'earned_at' => $to === DeliveryStatus::Completed ? now() : null,
+                    ]);
+            }
+
+            if ($to === DeliveryStatus::Cancelled) {
+                $delivery->codRecord()->where('status', 'expected')->update(['status' => 'cancelled']);
+            }
+
             $history = $delivery->statusHistories()->create([
                 'user_id' => $actor->id,
                 'from_status' => $from->value,

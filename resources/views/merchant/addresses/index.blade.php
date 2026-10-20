@@ -58,7 +58,7 @@
                         </p>
 
                         <p class="mt-2 text-sm text-slate-400">
-                            {{ collect([$address->area, $address->city, $address->country])->filter()->implode('، ') }}
+                            {{ collect([$address->building, $address->unit, $address->area, $address->city, $address->emirate ? __('addresses.emirates.' . $address->emirate) : null, $address->landmark, $address->makani_number, $address->country])->filter()->implode('، ') }}
                         </p>
 
                         @if ($address->contact_name)

@@ -58,6 +58,15 @@ class DeliveryLifecycleTest extends TestCase
             'status' => 'active',
         ]);
 
+        $plan = \App\Models\SubscriptionPlan::create([
+            'name' => 'Lifecycle plan', 'slug' => 'lifecycle-plan', 'currency' => 'AED',
+            'monthly_price' => '0.00', 'commission_rate' => '15.00', 'is_active' => true,
+        ]);
+        \App\Models\MerchantSubscription::create([
+            'merchant_id' => $this->merchant->id, 'subscription_plan_id' => $plan->id,
+            'status' => 'active', 'starts_at' => now()->subDay(), 'ends_at' => now()->addMonth(),
+        ]);
+
         $this->pickup = $this->address('Pickup', 'Al Quoz');
         $this->dropoff = $this->address('Dropoff', 'Business Bay');
 

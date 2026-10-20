@@ -65,9 +65,12 @@ class DeliveryController extends Controller
             'weight' => ['nullable', 'numeric', 'min:0'],
             'special_instructions' => ['nullable', 'string'],
             'scheduled_at' => ['nullable', 'date', 'after:now'],
+            'cod_amount' => ['nullable', 'regex:/^\d{1,10}(?:\.\d{1,2})?$/', 'numeric', 'decimal:0,2', 'min:0', 'max:9999999999.99'],
         ]);
 
-        $delivery = DB::transaction(function () use ($merchant, $user, $data) {
+        $codAmount = $data['cod_amount'] ?? '0';
+        unset($data['cod_amount']);
+        $delivery = DB::transaction(function () use ($merchant, $user, $data, $codAmount) {
             $delivery = Delivery::create([
                 ...$data,
                 'merchant_id' => $merchant->id,
@@ -75,6 +78,10 @@ class DeliveryController extends Controller
                 'status' => DeliveryStatus::Draft,
                 'currency' => 'AED',
             ]);
+
+            if (preg_match('/[1-9]/', (string) $codAmount)) {
+                $delivery->codRecord()->create(['expected_amount' => $codAmount, 'currency' => 'AED', 'status' => 'expected']);
+            }
 
             $delivery->statusHistories()->create([
                 'user_id' => $user->id,

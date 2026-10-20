@@ -10,6 +10,7 @@ class DeliveryAssignment extends Model
     protected $fillable = [
         'delivery_id',
         'driver_id',
+        'is_automatic',
         'status',
         'assigned_at',
         'accepted_at',
@@ -21,6 +22,7 @@ class DeliveryAssignment extends Model
     protected function casts(): array
     {
         return [
+            'is_automatic' => 'boolean',
             'assigned_at' => 'datetime',
             'accepted_at' => 'datetime',
             'rejected_at' => 'datetime',

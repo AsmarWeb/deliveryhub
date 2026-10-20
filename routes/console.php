@@ -11,3 +11,5 @@ Artisan::command('inspire', function () {
 Schedule::command('deliveries:run-recurring')
     ->everyMinute()
     ->withoutOverlapping(10);
+
+Schedule::command('deliveries:auto-dispatch')->everyMinute()->withoutOverlapping(5);

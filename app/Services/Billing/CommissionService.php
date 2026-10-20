@@ -80,12 +80,6 @@ class CommissionService
 
             $grossCents = ((int) $wholeAmount * 100) + (int) $fractionAmount;
 
-            if ($grossCents <= 0) {
-                throw ValidationException::withMessages([
-                    'delivery_fee' => 'Delivery amount must be greater than zero.',
-                ]);
-            }
-
             // Round half up to the nearest cent.
             $platformCents = intdiv(
                 ($grossCents * $rateBasisPoints) + 5000,

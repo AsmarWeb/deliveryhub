@@ -51,9 +51,12 @@ class DriverProfileController extends Controller
                 return false;
             }
 
-            $driver->update([
-                'is_available' => $validated['is_available'],
-            ]);
+            $updates = ['is_available' => $validated['is_available']];
+            if (! $validated['is_available']) {
+                $updates += ['dispatch_seen_at' => null, 'dispatch_location_at' => null,
+                    'dispatch_latitude' => null, 'dispatch_longitude' => null];
+            }
+            $driver->update($updates);
 
             return $driver->refresh();
         });
@@ -87,6 +90,7 @@ class DriverProfileController extends Controller
             'license_number' => $driver->license_number,
             'status' => $driver->status,
             'is_available' => $driver->is_available,
+            'dispatch_enabled' => $driver->dispatch_enabled,
             'last_location_at' => $driver->last_location_at?->toISOString(),
         ];
     }

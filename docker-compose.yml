@@ -16,6 +16,26 @@ services:
     networks:
       - deliveryhub
 
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      app:
+        condition: service_started
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    entrypoint: ["php"]
+    command: ["artisan", "schedule:work"]
+    restart: unless-stopped
+    networks:
+      - deliveryhub
+
   nginx:
     image: nginx:1.27-alpine
     container_name: deliveryhub-nginx

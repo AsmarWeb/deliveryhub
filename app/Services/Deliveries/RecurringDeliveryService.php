@@ -19,17 +19,17 @@ class RecurringDeliveryService
     public function execute(int $recurringDeliveryId): void
     {
         try {
-            DB::transaction(function () use ($recurringDeliveryId) {
+            $failure = DB::transaction(function () use ($recurringDeliveryId): ?Throwable {
                 $schedule = RecurringDelivery::query()
                     ->lockForUpdate()
                     ->find($recurringDeliveryId);
 
                 if (! $schedule || ! $schedule->is_active) {
-                    return;
+                    return null;
                 }
 
                 if ($schedule->next_run_at->isFuture()) {
-                    return;
+                    return null;
                 }
 
                 $scheduledFor = $schedule->next_run_at->copy();
@@ -47,7 +47,7 @@ class RecurringDeliveryService
                         'next_run_at' => $this->nextRun($schedule, $scheduledFor),
                     ]);
 
-                    return;
+                    return null;
                 }
 
                 // Skip expired occurrences instead of creating backdated deliveries.
@@ -63,28 +63,50 @@ class RecurringDeliveryService
                         'next_run_at' => $this->nextRun($schedule, $scheduledFor),
                     ]);
 
-                    return;
+                    return null;
                 }
 
-                // Verify subscription access before generating a delivery.
-                app(AutomationSubscriptionPolicy::class)
-                    ->activeSubscription($schedule->merchant);
+                try {
+                    // A savepoint rolls back partial delivery writes while the outer
+                    // transaction keeps the occurrence locked and records the failure.
+                    $delivery = DB::transaction(function () use ($schedule, $scheduledFor) {
+                        $subscription = app(AutomationSubscriptionPolicy::class)
+                            ->activeSubscription($schedule->merchant);
 
-                $delivery = $this->creation->create(
-                    $schedule->merchant,
-                    [
-                        'pickup_address_id' => $schedule->pickup_address_id,
-                        'dropoff_address_id' => $schedule->dropoff_address_id,
-                        'recipient_name' => $schedule->recipient_name,
-                        'recipient_phone' => $schedule->recipient_phone,
-                        'package_type' => $schedule->package_type,
-                        'weight' => $schedule->weight,
-                        'special_instructions' => $schedule->special_instructions,
-                        'scheduled_at' => $scheduledFor,
-                    ],
-                    null,
-                    'Delivery created by automation'
-                );
+                        if ($schedule->merchant->status !== 'active' ||
+                            $subscription->plan->max_active_automations <= 0) {
+                            throw new \RuntimeException('Automation access is no longer active.');
+                        }
+
+                        $delivery = $this->creation->create(
+                            $schedule->merchant,
+                            [
+                                'pickup_address_id' => $schedule->pickup_address_id,
+                                'dropoff_address_id' => $schedule->dropoff_address_id,
+                                'recipient_name' => $schedule->recipient_name,
+                                'recipient_phone' => $schedule->recipient_phone,
+                                'package_type' => $schedule->package_type,
+                                'weight' => $schedule->weight,
+                                'special_instructions' => $schedule->special_instructions,
+                                'scheduled_at' => $scheduledFor,
+                            ],
+                            null,
+                            'Delivery created by automation'
+                        );
+
+                        return $delivery;
+                    });
+                } catch (Throwable $e) {
+                    $run->update([
+                        'status' => 'failed',
+                        'error_message' => 'Execution failed. See application logs for details.',
+                        'executed_at' => now(),
+                    ]);
+
+                    // Keep next_run_at unchanged: the next minute retries this same
+                    // occurrence, until the existing 15-minute expiry skips it.
+                    return $e;
+                }
 
                 $run->update([
                     'delivery_id' => $delivery->id,
@@ -97,15 +119,19 @@ class RecurringDeliveryService
                     'last_run_at' => $scheduledFor,
                     'next_run_at' => $this->nextRun($schedule, $scheduledFor),
                 ]);
+
+                return null;
             }, 3);
+
+            if ($failure !== null) {
+                throw $failure;
+            }
         } catch (Throwable $e) {
             Log::error('Recurring delivery execution failed', [
                 'recurring_delivery_id' => $recurringDeliveryId,
                 'exception' => $e,
             ]);
 
-            // Preserve the failure for investigation.
-            // A retry policy will be added with the scheduler.
             throw $e;
         }
     }

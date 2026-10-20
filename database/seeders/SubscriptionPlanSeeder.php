@@ -12,6 +12,7 @@ class SubscriptionPlanSeeder extends Seeder
         $plans = [
             [
                 'name' => 'Starter',
+                'max_active_automations' => 0,
                 'slug' => 'starter',
                 'monthly_price' => '0.00',
                 'commission_rate' => '15.00',
@@ -19,6 +20,7 @@ class SubscriptionPlanSeeder extends Seeder
             ],
             [
                 'name' => 'Growth',
+                'max_active_automations' => 5,
                 'slug' => 'growth',
                 'monthly_price' => '99.00',
                 'commission_rate' => '10.00',
@@ -26,6 +28,7 @@ class SubscriptionPlanSeeder extends Seeder
             ],
             [
                 'name' => 'Business',
+                'max_active_automations' => 20,
                 'slug' => 'business',
                 'monthly_price' => '299.00',
                 'commission_rate' => '7.00',
@@ -33,6 +36,7 @@ class SubscriptionPlanSeeder extends Seeder
             ],
             [
                 'name' => 'Enterprise',
+                'max_active_automations' => 50,
                 'slug' => 'enterprise',
                 'monthly_price' => '0.00',
                 'commission_rate' => '5.00',

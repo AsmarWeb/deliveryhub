@@ -60,9 +60,9 @@ class SelfRegistrationController extends Controller
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::min(8)],
             'phone' => ['required', 'regex:/^\\+971[0-9]{8,9}$/'],
-            'vehicle_type' => ['required', 'string', 'max:100'],
-            'vehicle_plate' => ['required', 'string', 'max:100'],
-            'license_number' => ['required', 'string', 'max:100'],
+            'vehicle_type' => ['nullable', 'string', 'max:100'],
+            'vehicle_plate' => ['nullable', 'string', 'max:100'],
+            'license_number' => ['nullable', 'string', 'max:100'],
         ]);
 
         $user = DB::transaction(function () use ($data) {
@@ -75,9 +75,9 @@ class SelfRegistrationController extends Controller
             Driver::create([
                 'user_id' => $user->id,
                 'phone' => $data['phone'],
-                'vehicle_type' => $data['vehicle_type'],
-                'vehicle_plate' => $data['vehicle_plate'],
-                'license_number' => $data['license_number'],
+                'vehicle_type' => $data['vehicle_type'] ?? null,
+                'vehicle_plate' => $data['vehicle_plate'] ?? null,
+                'license_number' => $data['license_number'] ?? null,
                 'status' => 'pending',
                 'is_available' => false,
             ]);

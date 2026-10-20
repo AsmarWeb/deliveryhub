@@ -98,6 +98,16 @@ class AdminDriverController extends Controller
                 ->lockForUpdate()
                 ->findOrFail($driver->id);
 
+            if ($data['status'] === 'active') {
+                foreach (['phone', 'vehicle_type', 'vehicle_plate', 'license_number'] as $field) {
+                    if (blank($driver->{$field})) {
+                        throw ValidationException::withMessages([
+                            'status' => 'Driver must complete contact, vehicle and license details before approval.',
+                        ]);
+                    }
+                }
+            }
+
             if ($data['status'] === 'inactive') {
                 $hasActiveAssignments = $driver
                     ->assignments()

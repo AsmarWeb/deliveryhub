@@ -69,6 +69,8 @@ Route::prefix('v1')->group(function () {
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout']);
             Route::get('/me', [AuthController::class, 'me']);
+            Route::get('/account', [\App\Http\Controllers\Api\V1\Auth\AccountProfileController::class, 'show']);
+            Route::patch('/account', [\App\Http\Controllers\Api\V1\Auth\AccountProfileController::class, 'update'])->middleware('throttle:10,1');
         });
 
         Route::post('/register/merchant', [SelfRegistrationController::class, 'merchant'])->middleware('throttle:5,1');

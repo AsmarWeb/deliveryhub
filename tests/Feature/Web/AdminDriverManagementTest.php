@@ -55,6 +55,8 @@ class AdminDriverManagementTest extends TestCase
             'user_id' => $user->id,
             'phone' => '0501234567',
             'vehicle_type' => 'motorcycle',
+            'vehicle_plate' => 'Dubai A 12345',
+            'license_number' => 'TEST-LIC-12345',
             'status' => $status,
             'is_available' => $status === 'active',
         ]);

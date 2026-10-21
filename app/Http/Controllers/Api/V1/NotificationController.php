@@ -8,6 +8,11 @@ use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
+    public function show(Request $request, string $id): JsonResponse
+    {
+        return response()->json(['data' => $request->user()->notifications()->findOrFail($id)]);
+    }
+
     public function index(Request $request): JsonResponse
     {
         $notifications = $request->user()

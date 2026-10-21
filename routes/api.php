@@ -198,6 +198,11 @@ Route::prefix('v1')->group(function () {
         )
         ->name('driver.deliveries.proof');
 
+    Route::middleware(['auth:sanctum', 'account.active', 'throttle:20,1'])->group(function () {
+        Route::post('push/device', [\App\Http\Controllers\Api\V1\PushDeviceController::class, 'store']);
+        Route::delete('push/device', [\App\Http\Controllers\Api\V1\PushDeviceController::class, 'destroy']);
+    });
+
     Route::middleware('auth:sanctum')
         ->prefix('notifications')
         ->group(function () {
@@ -210,6 +215,8 @@ Route::prefix('v1')->group(function () {
                 NotificationController::class,
                 'unreadCount'
             ]);
+
+            Route::get('/{id}', [NotificationController::class, 'show']);
 
             Route::patch('/{id}/read', [
                 NotificationController::class,

@@ -13,3 +13,5 @@ Schedule::command('deliveries:run-recurring')
     ->withoutOverlapping(10);
 
 Schedule::command('deliveries:auto-dispatch')->everyMinute()->withoutOverlapping(5);
+
+Schedule::command('notifications:send-push')->everyMinute()->withoutOverlapping(5);

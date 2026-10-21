@@ -69,23 +69,26 @@ class SendDeliveryStatusNotifications
                 \Ramsey\Uuid\Uuid::NAMESPACE_URL,
                 'delivery-status:' . $event->history->getKey() . ':user:' . $userId
             )->toString();
-            DB::table('notifications')->insertOrIgnore([
-                'id' => $id,
-                'type' => DeliveryStatusNotification::class,
-                'notifiable_type' => $user->getMorphClass(),
-                'notifiable_id' => $user->getKey(),
-                'data' => json_encode([
-                    'delivery_id' => $delivery->getKey(),
-                    'tracking_number' => $delivery->tracking_number,
-                    'status' => $status,
-                    'history_id' => $event->history->getKey(),
-                    // A driver opens the offer, never another driver's later assignment.
-                    'assignment_id' => $assignment?->driver?->user_id === $userId ? $assignment->id : null,
-                ], JSON_THROW_ON_ERROR),
-                'read_at' => null,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            DB::transaction(function () use ($id, $user, $delivery, $status, $event, $assignment, $userId) {
+                DB::table('notifications')->insertOrIgnore([
+                    'id' => $id,
+                    'type' => DeliveryStatusNotification::class,
+                    'notifiable_type' => $user->getMorphClass(),
+                    'notifiable_id' => $user->getKey(),
+                    'data' => json_encode([
+                        'delivery_id' => $delivery->getKey(),
+                        'tracking_number' => $delivery->tracking_number,
+                        'status' => $status,
+                        'history_id' => $event->history->getKey(),
+                        // A driver opens the offer, never another driver's later assignment.
+                        'assignment_id' => $assignment?->driver?->user_id === $userId ? $assignment->id : null,
+                    ], JSON_THROW_ON_ERROR),
+                    'read_at' => null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                app(\App\Services\Push\PushOutbox::class)->enqueue($id, $userId);
+            });
         }
     }
 }

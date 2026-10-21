@@ -4,7 +4,7 @@ set -e
 
 cd /var/www/html
 
-echo "Starting DeliveryHub container..."
+echo "Starting Raslo container..."
 
 if [ ! -f vendor/autoload.php ]; then
     echo "Installing Composer dependencies..."

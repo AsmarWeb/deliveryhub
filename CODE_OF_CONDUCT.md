@@ -2,7 +2,7 @@
 
 ## Our Commitment
 
-DeliveryHub aims to provide a welcoming, respectful, and constructive open-source community.
+Raslo aims to provide a welcoming, respectful, and constructive open-source community.
 
 ## Expected Behavior
 

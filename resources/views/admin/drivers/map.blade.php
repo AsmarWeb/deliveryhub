@@ -147,7 +147,7 @@
     <div class="dh-uae-shell space-y-5" dir="{{ $isAr ? 'rtl' : 'ltr' }}">
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
-                <div class="mb-2 text-xs font-bold tracking-widest text-cyan-400">DELIVERYHUB · UAE OPERATIONS</div>
+                <div class="mb-2 text-xs font-bold tracking-widest text-cyan-400">RASLO · UAE OPERATIONS</div>
                 <h1 class="text-2xl font-black text-white sm:text-3xl">
                     {{ $isAr ? 'مركز عمليات التوصيل في الإمارات' : 'UAE Delivery Operations Center' }}</h1>
                 <p class="mt-2 text-sm text-slate-400">

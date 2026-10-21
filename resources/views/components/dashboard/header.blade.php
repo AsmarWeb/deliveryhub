@@ -50,7 +50,7 @@
                     class="mb-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
 
                     <a href="{{ route('web.dashboard') }}" class="font-medium transition hover:text-blue-400">
-                        DeliveryHub
+                        Raslo
                     </a>
 
                     <span aria-hidden="true">/</span>

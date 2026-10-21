@@ -68,7 +68,7 @@
         <section class="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
             <div class="min-w-0">
                 <p class="mb-2 text-sm font-medium text-blue-400">
-                    DeliveryHub / {{ $roleTitle }}
+                    Raslo / {{ $roleTitle }}
                 </p>
                 <h2 class="text-2xl font-bold tracking-tight text-white sm:text-3xl">
                     {{ __('dashboard.welcome') }}، {{ auth()->user()->name }}
@@ -244,7 +244,7 @@
         @endif
 
         <footer class="border-t border-slate-800 pt-6 text-center text-xs text-slate-500">
-            © {{ date('Y') }} DeliveryHub — {{ __('dashboard.delivery_management') }}
+            © {{ date('Y') }} Raslo — {{ __('dashboard.delivery_management') }}
         </footer>
     </div>
 @endsection

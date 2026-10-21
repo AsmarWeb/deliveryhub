@@ -17,4 +17,4 @@ Never include passwords, API keys, tokens, or other secrets in a security report
 
 ## Supported Versions
 
-Security fixes will initially target the latest development version of DeliveryHub.
+Security fixes will initially target the latest development version of Raslo.

@@ -59,7 +59,7 @@ class PushOutbox
                     if ($row->status === 'pending') {
                         $ar = $device->language === 'ar';
                         $response = $http->post('https://exp.host/--/api/v2/push/send', [
-                            'to' => decrypt($device->token), 'title' => 'DeliveryHub',
+                            'to' => decrypt($device->token), 'title' => 'Raslo',
                             'body' => $ar ? 'لديك تحديث جديد. افتح التطبيق لعرض التفاصيل.' : 'You have a new update. Open the app for details.',
                             'sound' => 'default', 'channelId' => 'deliveries', 'ttl' => 120,
                             'data' => ['notification_id' => $row->notification_id],

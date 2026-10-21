@@ -94,7 +94,7 @@ class AdminDashboardTest extends TestCase
     {
         $merchant = Merchant::create([
             'user_id' => $this->merchantUser->id,
-            'business_name' => 'DeliveryHub Test Merchant',
+            'business_name' => 'Raslo Test Merchant',
             'business_email' => 'dashboard-merchant@example.com',
             'status' => 'active',
         ]);
@@ -148,6 +148,6 @@ class AdminDashboardTest extends TestCase
                 );
         });
 
-        $response->assertSee('DeliveryHub Test Merchant');
+        $response->assertSee('Raslo Test Merchant');
     }
 }

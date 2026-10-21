@@ -4,13 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login | DeliveryHub</title>
+    <title>Login | Raslo</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
 <body class="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
     <main class="w-full max-w-md rounded-2xl bg-slate-900 p-8 shadow-xl">
-        <h1 class="text-3xl font-bold mb-2">DeliveryHub</h1>
+        <h1 class="text-3xl font-bold mb-2">Raslo</h1>
         <p class="text-slate-400 mb-8">Sign in to your workspace</p>
 
         @if ($errors->any())

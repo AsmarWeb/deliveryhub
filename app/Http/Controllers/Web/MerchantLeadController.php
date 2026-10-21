@@ -39,8 +39,8 @@ class MerchantLeadController extends Controller
             $recipient = config('services.deliveryhub.leads_email');
             if ($recipient) {
                 Mail::raw(
-                    "New DeliveryHub merchant lead #{$lead->id}\nCompany: {$lead->company_name}\nContact: {$lead->contact_name}\nEmail: {$lead->email}\nPhone: {$lead->phone}\nEmirate: {$lead->emirate}\nBusiness: {$lead->business_type}\nVolume: {$lead->monthly_deliveries}\nMessage: {$lead->message}",
-                    fn ($mail) => $mail->to($recipient)->subject('DeliveryHub | New UAE merchant lead #'.$lead->id)
+                    "New Raslo merchant lead #{$lead->id}\nCompany: {$lead->company_name}\nContact: {$lead->contact_name}\nEmail: {$lead->email}\nPhone: {$lead->phone}\nEmirate: {$lead->emirate}\nBusiness: {$lead->business_type}\nVolume: {$lead->monthly_deliveries}\nMessage: {$lead->message}",
+                    fn ($mail) => $mail->to($recipient)->subject('Raslo | New UAE merchant lead #'.$lead->id)
                 );
             }
         } catch (\Throwable $e) {

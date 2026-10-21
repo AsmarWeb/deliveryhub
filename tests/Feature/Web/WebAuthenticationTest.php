@@ -40,7 +40,7 @@ class WebAuthenticationTest extends TestCase
     {
         $this->get('/login')
             ->assertOk()
-            ->assertSee('DeliveryHub');
+            ->assertSee('Raslo');
     }
 
     public function test_guest_is_redirected_from_dashboard(): void
@@ -80,7 +80,7 @@ class WebAuthenticationTest extends TestCase
 
         Merchant::create([
             'user_id' => $user->id,
-            'business_name' => 'DeliveryHub Test Merchant',
+            'business_name' => 'Raslo Test Merchant',
             'business_email' => 'merchant@example.com',
             'status' => 'active',
         ]);

@@ -16,7 +16,7 @@ class HomeController extends Controller
         $apkUrl = Cache::remember('deliveryhub.mobile.latest_apk', now()->addMinutes(15), function () {
             try {
                 $response = Http::timeout(3)
-                    ->withHeaders(['Accept' => 'application/vnd.github+json', 'User-Agent' => 'DeliveryHub-Website'])
+                    ->withHeaders(['Accept' => 'application/vnd.github+json', 'User-Agent' => 'Raslo-Website'])
                     ->get('https://api.github.com/repos/AsmarWeb/deliveryhub-mobile/releases/latest');
                 if (! $response->successful()) {
                     return null;
@@ -37,11 +37,11 @@ class HomeController extends Controller
         app()->setLocale($locale);
 
         $title = $isAr
-            ? 'DeliveryHub الإمارات | انضم كشركة أو تاجر لإدارة التوصيل'
-            : 'DeliveryHub UAE | Join as a Merchant or Business';
+            ? 'Raslo الإمارات | انضم كشركة أو تاجر لإدارة التوصيل'
+            : 'Raslo UAE | Join as a Merchant or Business';
         $description = $isAr
-            ? 'انضم إلى DeliveryHub في الإمارات: سجّل اهتمام شركتك أو متجرك لإدارة طلبات التوصيل والسائقين وتتبع العمليات وإثبات التسليم من منصة واحدة.'
-            : 'Join DeliveryHub in the UAE. Register your business interest in delivery management, driver assignments, tracking and proof of delivery on one platform.';
+            ? 'انضم إلى Raslo في الإمارات: سجّل اهتمام شركتك أو متجرك لإدارة طلبات التوصيل والسائقين وتتبع العمليات وإثبات التسليم من منصة واحدة.'
+            : 'Join Raslo in the UAE. Register your business interest in delivery management, driver assignments, tracking and proof of delivery on one platform.';
         $canonicalUrl = $isAr ? url('/?lang=ar') : url('/');
 
         $structuredData = [
@@ -50,7 +50,7 @@ class HomeController extends Controller
                 [
                     '@type' => 'Organization',
                     '@id' => url('/').'#organization',
-                    'name' => 'DeliveryHub',
+                    'name' => 'Raslo',
                     'url' => url('/'),
                     'logo' => asset('images/deliveryhub-icon.png'),
                     'sameAs' => [
@@ -62,13 +62,13 @@ class HomeController extends Controller
                     '@type' => 'WebSite',
                     '@id' => url('/').'#website',
                     'url' => url('/'),
-                    'name' => 'DeliveryHub',
+                    'name' => 'Raslo',
                     'inLanguage' => $locale,
                     'publisher' => ['@id' => url('/').'#organization'],
                 ],
                 [
                     '@type' => 'SoftwareApplication',
-                    'name' => 'DeliveryHub',
+                    'name' => 'Raslo',
                     'applicationCategory' => 'BusinessApplication',
                     'operatingSystem' => 'Web, Android',
                     'description' => $description,

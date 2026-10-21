@@ -123,8 +123,8 @@
 <div id="sidebar-overlay" class="sidebar-overlay" hidden></div>
 <aside id="dashboard-sidebar" class="dh-sidebar" aria-label="{{ __('dashboard.dashboard') }}">
     <div class="dh-sidebar-brand">
-        <a href="{{ route($homeRoute) }}" class="dh-brand-link" title="DeliveryHub">
-            <span class="dh-logo">D</span>
+        <a href="{{ route($homeRoute) }}" class="dh-brand-link" title="Raslo">
+            <span class="dh-logo">R</span>
             <span class="dh-label dh-brand-name">Delivery<span>Hub</span></span>
         </a>
         <button id="sidebar-collapse" class="dh-icon-button dh-desktop-toggle" type="button"

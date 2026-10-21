@@ -12,7 +12,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#020617">
 
-    <title>@yield('title', __('dashboard.dashboard')) | DeliveryHub</title>
+    <title>@yield('title', __('dashboard.dashboard')) | Raslo</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')

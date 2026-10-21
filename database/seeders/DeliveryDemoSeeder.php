@@ -15,7 +15,7 @@ class DeliveryDemoSeeder extends Seeder
         $user = User::firstOrCreate(
             ['email' => 'merchant@deliveryhub.test'],
             [
-                'name' => 'DeliveryHub Demo Merchant',
+                'name' => 'Raslo Demo Merchant',
                 'password' => Hash::make('DemoMerchant@2026!'),
             ]
         );
@@ -27,7 +27,7 @@ class DeliveryDemoSeeder extends Seeder
         $merchant = Merchant::updateOrCreate(
             ['user_id' => $user->id],
             [
-                'business_name' => 'DeliveryHub Demo Store',
+                'business_name' => 'Raslo Demo Store',
                 'business_email' => 'merchant@deliveryhub.test',
                 'business_phone' => '+971500000001',
                 'status' => 'active',

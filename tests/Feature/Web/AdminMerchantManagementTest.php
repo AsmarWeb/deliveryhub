@@ -37,7 +37,7 @@ class AdminMerchantManagementTest extends TestCase
 
         $this->merchant = Merchant::factory()->create([
             'user_id' => $this->merchantUser->id,
-            'business_name' => 'DeliveryHub Test Merchant',
+            'business_name' => 'Raslo Test Merchant',
             'business_email' => 'merchant@example.com',
             'business_phone' => '0501234567',
             'status' => 'active',
@@ -74,7 +74,7 @@ class AdminMerchantManagementTest extends TestCase
         $this->actingAs($this->admin)
             ->get(route('admin.merchants.index'))
             ->assertOk()
-            ->assertSee('DeliveryHub Test Merchant');
+            ->assertSee('Raslo Test Merchant');
     }
 
     public function test_guest_cannot_view_merchants(): void
@@ -111,7 +111,7 @@ class AdminMerchantManagementTest extends TestCase
                 'search' => 'merchant@example.com',
             ]))
             ->assertOk()
-            ->assertSee('DeliveryHub Test Merchant');
+            ->assertSee('Raslo Test Merchant');
     }
 
     public function test_admin_can_filter_merchants_by_status(): void
@@ -124,7 +124,7 @@ class AdminMerchantManagementTest extends TestCase
             ]))
             ->assertOk()
             ->assertSee('Inactive Business')
-            ->assertDontSee('DeliveryHub Test Merchant');
+            ->assertDontSee('Raslo Test Merchant');
     }
 
     public function test_admin_can_view_merchant_details(): void
@@ -132,7 +132,7 @@ class AdminMerchantManagementTest extends TestCase
         $this->actingAs($this->admin)
             ->get(route('admin.merchants.show', $this->merchant))
             ->assertOk()
-            ->assertSee('DeliveryHub Test Merchant')
+            ->assertSee('Raslo Test Merchant')
             ->assertSee('merchant@example.com');
     }
 

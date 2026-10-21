@@ -31,7 +31,7 @@ return [
     | Roles Structure
     |--------------------------------------------------------------------------
     |
-    | DeliveryHub roles and their permissions.
+    | Raslo roles and their permissions.
     |
     */
 

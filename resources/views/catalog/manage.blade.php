@@ -29,6 +29,7 @@
                 </div>
             @endif
             @if($canConnect)<div class="actions space">
+                <a class="button secondary" href="{{ route('merchant.catalog.deliveries', $connection) }}">{{ $t('ربط طلبات التوصيل', 'Delivery-order integration') }}</a>
                 @if($connection->mode === 'feed' && $connection->status === 'active')
                     <form method="POST" action="{{ route('merchant.catalog.check', $connection) }}">@csrf<button class="button secondary">{{ $t('فحص الاتصال','Check connection') }}</button></form>
                     <form method="POST" action="{{ route('merchant.catalog.sync', $connection) }}">@csrf<button class="button">{{ $t('مزامنة الآن','Sync now') }}</button></form>

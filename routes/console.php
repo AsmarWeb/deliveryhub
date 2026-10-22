@@ -1,11 +1,13 @@
 <?php
 
 use App\Models\CatalogConnection;
+use App\Models\IntegrationDeliveryWebhook;
 use App\Models\StripeWebhookEvent;
 use App\Models\SubscriptionPlan;
 use App\Services\Billing\StripeWebhookInbox;
 use App\Services\Catalog\CatalogSyncScheduler;
 use App\Services\Catalog\EnterpriseCatalogAccess;
+use App\Services\Integrations\DeliveryWebhookOutbox;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -91,4 +93,23 @@ Artisan::command('billing:replay-stripe-event {event}', function () {
     $payload = Cashier::stripe()->events->retrieve($id, [])->toArray();
     $event = app(StripeWebhookInbox::class)->accept($payload);
     $this->info('Event recorded: '.$event->id.'; status: '.$event->status);
+});
+
+Artisan::command('integrations:send-webhooks', function () {
+    $this->info('Delivery webhook jobs queued: '.app(DeliveryWebhookOutbox::class)->retryDue());
+});
+Schedule::command('integrations:send-webhooks')->everyMinute()->withoutOverlapping();
+Artisan::command('integrations:webhooks', function () {
+    $this->table(['Event', 'Status', 'Attempts', 'Next', 'Error'], IntegrationDeliveryWebhook::latest()->limit(30)->get()->map(fn ($event) => [$event->id, $event->status, $event->attempts, $event->next_attempt_at?->toIso8601String(), $event->error_code])->all());
+});
+Artisan::command('integrations:retry-webhook {event}', function () {
+    $event = IntegrationDeliveryWebhook::findOrFail($this->argument('event'));
+    if ($event->status !== 'failed') {
+        $this->error('Only failed events can be retried.');
+
+        return 1;
+    }
+    $event->update(['status' => 'retry', 'attempts' => 0, 'queued_at' => null, 'next_attempt_at' => now()]);
+    app(DeliveryWebhookOutbox::class)->enqueue($event->id);
+    $this->info('Delivery webhook queued.');
 });

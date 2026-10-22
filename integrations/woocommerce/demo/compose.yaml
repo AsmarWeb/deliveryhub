@@ -23,6 +23,7 @@ services:
       WORDPRESS_DB_USER: wordpress
       WORDPRESS_DB_PASSWORD: raslo-local-demo-db
       WP_CLI_CACHE_DIR: /tmp/wp-cli-cache
+      WORDPRESS_CONFIG_EXTRA: "if (!defined('WP_ENVIRONMENT_TYPE')) define('WP_ENVIRONMENT_TYPE', 'local');"
     depends_on:
       db:
         condition: service_healthy
@@ -40,7 +41,23 @@ services:
       - site:/var/www/html
       - ../raslo-woocommerce:/var/www/html/wp-content/plugins/raslo-woocommerce:ro
       - ./seed.php:/tmp/raslo-seed.php:ro
+      - ./seed-delivery-order.php:/tmp/raslo-delivery-order.php:ro
     profiles: ["tools"]
+  worker:
+    image: wordpress:cli-php8.3
+    user: "33:33"
+    working_dir: /var/www/html
+    environment: *wp-env
+    entrypoint: ["sh", "-c"]
+    command: ["while :; do wp action-scheduler run --hooks=raslo_wc_rebuild,raslo_wc_sync_product,raslo_wc_reconcile_index,raslo_wc_reconcile,raslo_wc_send_delivery,raslo_wc_poll_delivery,raslo_wc_reconcile_deliveries; sleep 30; done"]
+    restart: unless-stopped
+    depends_on:
+      wordpress:
+        condition: service_started
+    volumes:
+      - site:/var/www/html
+      - ../raslo-woocommerce:/var/www/html/wp-content/plugins/raslo-woocommerce:ro
+
 volumes:
   database:
   site:

@@ -100,7 +100,7 @@ class WP_Error
 }
 class WP_REST_Response
 {
-    public function __construct(public $data, public $status, public $headers) {}
+    public function __construct(public $data, public $status, public $headers = []) {}
 }
 class RasloFakeProduct
 {

@@ -16,11 +16,11 @@ Zero records after a successful check means the first feed page was empty, not t
 
 ## Other platforms
 
-The API guide includes the existing Push endpoint, request shape and an authenticated OpenAPI download. Laravel/custom systems and other platforms need a compatible adapter or feed. Shopify has no native installable connector in this release; its card states that explicitly. No checkout, order forwarding or delivery booking has been introduced.
+The API guide includes the existing Push endpoint, request shape and an authenticated OpenAPI download. Laravel/custom systems and other platforms need a compatible adapter or feed. Shopify has no native installable connector in this release; its card states that explicitly. Checkout remains at the store. Optional prepaid delivery forwarding now uses the separate Delivery API described in `store-delivery-api.md`.
 
 ## Downloads
 
-The bundled `resources/integrations/raslo-woocommerce.zip` is intentionally outside `public/`. Only the controller download route serves it after authentication, active-account and paid Enterprise checks, with no-store headers. The ZIP has the required `raslo-woocommerce/` root and is built from the existing plugin 0.1.0 sources. The UI shows version and SHA-256.
+The bundled `resources/integrations/raslo-woocommerce.zip` is intentionally outside `public/`. Only the controller download route serves it after authentication, active-account and paid Enterprise checks, with no-store headers. The ZIP has the required `raslo-woocommerce/` root and is built from the existing plugin 0.2.0 sources. The UI shows version and SHA-256.
 
 To rebuild after an intentional plugin-source change:
 

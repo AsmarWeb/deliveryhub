@@ -47,7 +47,7 @@ class CatalogDashboardController extends Controller
         abort_unless(in_array($platform, ['woocommerce', 'api'], true), 404);
 
         return response()->view('catalog.guide', $this->context($request) + [
-            'platform' => $platform, 'pluginVersion' => '0.1.0',
+            'platform' => $platform, 'pluginVersion' => '0.2.0',
             'pluginChecksum' => is_file(resource_path('integrations/raslo-woocommerce.zip'))
                 ? hash_file('sha256', resource_path('integrations/raslo-woocommerce.zip')) : null,
         ])->header('Cache-Control', 'no-store')->header('Referrer-Policy', 'no-referrer');

@@ -115,4 +115,9 @@ The UAE visual refresh uses an emerald, ivory and gold palette, bilingual wordma
 
 ## Store integration dashboard
 
-Merchants can set up WooCommerce, download its plugin and OpenAPI contract, inspect connections, and check a feed from the shared dashboard. Administrators review publication from the sidebar. See [the workspace guide](docs/store-integration-dashboard.md). Native Shopify integration and order forwarding are not included.
+Merchants can set up WooCommerce, download its plugin and OpenAPI contract, inspect connections, and check a feed from the shared dashboard. Administrators review publication from the sidebar. See [the workspace guide](docs/store-integration-dashboard.md). Native Shopify integration is not included. Optional prepaid WooCommerce delivery forwarding is documented in [the Delivery API guide](docs/store-delivery-api.md).
+
+
+## Enterprise delivery-order API
+
+The optional WooCommerce 0.2.0 bridge forwards new eligible prepaid UAE orders to the existing Raslo pricing/approval workflow. Dedicated delivery keys, idempotency, signed retryable status callbacks and private customer tracking are documented in [the Delivery API guide](docs/store-delivery-api.md). The pilot requires real WordPress/MySQL checkout acceptance before production.

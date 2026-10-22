@@ -10,12 +10,12 @@ class CatalogConnection extends Model
 {
     protected $guarded = ['id'];
 
-    protected $hidden = ['key_hash', 'feed_token'];
+    protected $hidden = ['key_hash', 'feed_token', 'delivery_key_hash', 'delivery_webhook_secret'];
 
     protected function casts(): array
     {
         return ['scopes' => 'array', 'feed_token' => 'encrypted', 'approved_at' => 'datetime',
-            'last_used_at' => 'datetime', 'last_synced_at' => 'datetime', 'next_sync_at' => 'datetime'];
+            'delivery_pickup_address_id' => 'integer', 'delivery_enabled' => 'boolean', 'delivery_webhook_secret' => 'encrypted', 'last_used_at' => 'datetime', 'last_synced_at' => 'datetime', 'next_sync_at' => 'datetime'];
     }
 
     public function merchant(): BelongsTo

@@ -87,7 +87,7 @@
             ],
             [
                 'route' => 'merchant.catalog.index',
-                'active' => ['merchant.catalog.index'],
+                'active' => ['merchant.catalog.index', 'merchant.catalog.deliveries'],
                 'label' => $isAr ? 'متاجري والتكاملات' : 'My stores & integrations',
                 'icon' => 'store',
             ],

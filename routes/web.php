@@ -4,6 +4,8 @@ use App\Http\Controllers\Auth\WebAuthController;
 use App\Http\Controllers\Billing\StripeWebhookController;
 use App\Http\Controllers\Catalog\CatalogDashboardController;
 use App\Http\Controllers\Catalog\PublicCatalogController;
+use App\Http\Controllers\Integrations\DeliveryConnectionSettingsController;
+use App\Http\Controllers\Integrations\PublicDeliveryTrackingController;
 use App\Http\Controllers\Web\Admin\AdminDashboardController;
 use App\Http\Controllers\Web\Admin\AdminDeliveryCompletionController;
 use App\Http\Controllers\Web\Admin\AdminDeliveryController;
@@ -117,10 +119,6 @@ Route::middleware('auth')->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('/create', 'create')->name('create');
             Route::post('/', 'store')->name('store');
-            Route::get('/platforms', 'platforms')->name('platforms');
-            Route::get('/platforms/woocommerce/download', 'download')->name('download');
-            Route::get('/platforms/api/openapi', 'contract')->name('contract');
-            Route::get('/platforms/{platform}', 'guide')->whereIn('platform', ['woocommerce', 'api'])->name('guide');
             Route::get('/{address}/edit', 'edit')
                 ->whereNumber('address')->name('edit');
             Route::put('/{address}', 'update')
@@ -320,13 +318,19 @@ Route::middleware(['auth', 'account.active', 'throttle:20,1'])->prefix('merchant
     Route::get('/platforms', 'platforms')->name('platforms');
     Route::get('/platforms/woocommerce/download', 'download')->name('download');
     Route::get('/platforms/api/openapi', 'contract')->name('contract');
+    Route::get('/platforms/api/delivery-openapi', [DeliveryConnectionSettingsController::class, 'contract'])->name('delivery-contract');
     Route::get('/platforms/{platform}', 'guide')->whereIn('platform', ['woocommerce', 'api'])->name('guide');
     Route::post('/{connection}/rotate-key', 'rotate')->whereNumber('connection')->name('rotate');
     Route::post('/{connection}/status', 'update')->whereNumber('connection')->name('status');
     Route::post('/{connection}/sync', 'sync')->whereNumber('connection')->name('sync');
     Route::post('/{connection}/check', 'check')->whereNumber('connection')->name('check');
+    Route::get('/{connection}/deliveries', [DeliveryConnectionSettingsController::class, 'show'])->whereNumber('connection')->name('deliveries');
+    Route::post('/{connection}/delivery-settings', [DeliveryConnectionSettingsController::class, 'update'])->whereNumber('connection')->name('delivery-settings');
 });
 Route::middleware(['auth', 'role:admin'])->prefix('admin/catalog')->name('admin.catalog.')->controller(CatalogDashboardController::class)->group(function () {
     Route::get('/', 'admin')->name('index');
     Route::post('/{connection}/approval', 'approve')->whereNumber('connection')->name('approval');
 });
+
+Route::get('/track/{token}', PublicDeliveryTrackingController::class)
+    ->where('token', '[a-f0-9]{64}')->middleware('throttle:60,1')->name('integrations.track');

@@ -5,7 +5,9 @@ namespace App\Services\Deliveries;
 use App\Enums\DeliveryStatus;
 use App\Events\DeliveryStatusChanged;
 use App\Models\Delivery;
+use App\Models\DeliveryCommission;
 use App\Models\User;
+use App\Services\Integrations\DeliveryWebhookOutbox;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -53,7 +55,7 @@ class DeliveryTransitionService
 
             // Update only an existing approval snapshot; never backfill using a later plan rate.
             if (in_array($to, [DeliveryStatus::Completed, DeliveryStatus::Cancelled], true)) {
-                \App\Models\DeliveryCommission::query()
+                DeliveryCommission::query()
                     ->where('delivery_id', $delivery->id)
                     ->where('merchant_id', $delivery->merchant_id)
                     ->where('status', 'pending')
@@ -74,6 +76,8 @@ class DeliveryTransitionService
                 'reason' => $reason,
                 'metadata' => $metadata,
             ]);
+
+            app(DeliveryWebhookOutbox::class)->record($delivery, $history);
 
             DB::afterCommit(function () use ($delivery, $history) {
                 event(new DeliveryStatusChanged(

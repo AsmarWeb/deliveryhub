@@ -1,10 +1,10 @@
-# Raslo for WooCommerce — connector 0.1.0
+# Raslo for WooCommerce — connector 0.2.0
 
-Installable WordPress plugin exposing a private, provider-normalized catalog Feed for the existing paid Raslo Enterprise integration. This connector adds product discovery; checkout and customer payment remain in WooCommerce. It does not send orders, book deliveries or reserve inventory yet.
+Installable WordPress plugin exposing a private, provider-normalized catalog Feed for the existing paid Raslo Enterprise integration. Checkout and customer payment remain in WooCommerce. Optional prepaid delivery-order forwarding is available with a dedicated delivery key; see `docs/store-delivery-api.md` in the backend. Inventory reservation, COD and automatic cancellations/refunds are not supported.
 
 ## Requirements and scope
 
-- WordPress 6.5+, PHP 8.1+, an active WooCommerce installation and its initialized Action Scheduler.
+- WordPress 6.5+, PHP 8.1+, WooCommerce 8.2+ and its initialized Action Scheduler.
 - MySQL/MariaDB with InnoDB transactions and named locks (`GET_LOCK`).
 - AED store currency and HTTPS store URLs with pretty permalinks.
 - Simple physical products and physical variations are published. Variable parent records are archived; variants have independent stable IDs `wc:ID`. Grouped/external/digital products are not published in this release.
@@ -85,4 +85,21 @@ The command preserves lab volumes. Do not add `-v` unless you intentionally want
 
 ## Validation boundary
 
-Automated tests cover mapping, token checks, stock/visibility rules, stable versions, deferred updates, pagination, deletion tombstones and locking behavior using WordPress/WooCommerce boundary doubles and a SQLite projection test adapter. The Docker lab is supplied for acceptance against real WordPress/WooCommerce/MySQL; it has not been run in this execution environment, which has no Docker daemon. Treat version 0.1.0 as a pilot until those acceptance steps pass on your site.
+Automated tests cover mapping, token checks, stock/visibility rules, stable versions, deferred updates, pagination, deletion tombstones and locking behavior using WordPress/WooCommerce boundary doubles and a SQLite projection test adapter. The Docker lab is supplied for acceptance against real WordPress/WooCommerce/MySQL; it has not been run in this execution environment, which has no Docker daemon. Treat version 0.2.0 as a pilot until those acceptance steps pass on your site.
+
+
+## Delivery-order integration (0.2.0 pilot)
+
+Catalog Feed settings remain unchanged. Delivery forwarding is a separate opt-in:
+
+1. In Raslo → My stores & integrations → Delivery-order integration, choose a saved pickup address, enable delivery access and optionally configure the callback URL shown by WordPress.
+2. Copy the dedicated delivery key and callback signing secret once. They are not the catalog Feed token. Configure WooCommerce → Raslo deliveries with a reachable HTTPS Raslo API base ending in `/api/integrations/v1`.
+3. Add Raslo to a UAE WooCommerce shipping zone and enter your own explicit customer shipping charge. No price is supplied automatically. This charge is independent of the final Raslo price, which still needs your approval in Raslo.
+4. New paid AED orders with physical items, a UAE recipient and exactly one Raslo shipping line are queued. COD, unpaid, refunded, cancelled, non-AED, non-UAE and mixed/multi-shipment orders are not automatically forwarded. Older orders require the explicit Raslo retry order action.
+5. Status callbacks use HMAC-SHA256, timestamps and monotonic sequence IDs. Polling recovers missed updates. Neither WooCommerce payment/refund state nor its native order status is automatically changed. Delivery state is saved separately and displayed in the order.
+
+Use WooCommerce order CRUD for HPOS compatibility; no direct order-post/meta SQL is used. Pending payloads and credentials are encrypted with the WordPress auth salt. Do not change salts or repoint a configured shop to another Raslo instance without reconciling pending orders.
+
+Action Scheduler processing must include `raslo_wc_send_delivery`, `raslo_wc_poll_delivery`, `raslo_wc_reconcile_deliveries`, in addition to the catalog hooks. The demo Compose now contains an optional persistent `worker` service for both. A bounded recurring reconciliation scans up to 5,000 recent orders from the last 30 days, skipping terminal deliveries, to recover missing scheduled jobs. Older missing jobs require the explicit order action.
+
+**The real WordPress/MySQL checkout acceptance test remains required.** Automated bridge tests use WordPress/WooCommerce boundary doubles, not a live store or payment gateway.

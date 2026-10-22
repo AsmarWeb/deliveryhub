@@ -1,0 +1,381 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Raslo Enterprise Delivery API",
+    "version": "1.0.0",
+    "description": "Prepaid UAE deliveries. Pricing and merchant approval remain in Raslo. Use a dedicated delivery integration key, not a catalog key."
+  },
+  "servers": [
+    {
+      "url": "/api/integrations/v1"
+    }
+  ],
+  "security": [
+    {
+      "DeliveryKey": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "DeliveryKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "raslo_delivery_ followed by 64 hexadecimal characters"
+      }
+    },
+    "schemas": {
+      "OrderRequest": {
+        "type": "object",
+        "required": [
+          "external_order_id",
+          "payment_status",
+          "currency",
+          "recipient"
+        ],
+        "properties": {
+          "external_order_id": {
+            "type": "string",
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9._:-]+$"
+          },
+          "payment_status": {
+            "const": "paid"
+          },
+          "currency": {
+            "const": "AED"
+          },
+          "recipient": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "contact_name",
+              "contact_phone",
+              "city",
+              "emirate",
+              "address_line"
+            ],
+            "properties": {
+              "contact_name": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "city": {
+                "type": "string",
+                "maxLength": 120
+              },
+              "address_line": {
+                "type": "string",
+                "maxLength": 1000
+              },
+              "area": {
+                "type": "string",
+                "maxLength": 120
+              },
+              "street": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "building": {
+                "type": "string",
+                "maxLength": 120
+              },
+              "unit": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "landmark": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "contact_phone": {
+                "type": "string",
+                "pattern": "^\\+[1-9][0-9]{7,14}$"
+              },
+              "emirate": {
+                "type": "string",
+                "enum": [
+                  "abu_dhabi",
+                  "dubai",
+                  "sharjah",
+                  "ajman",
+                  "umm_al_quwain",
+                  "ras_al_khaimah",
+                  "fujairah"
+                ]
+              },
+              "makani_number": {
+                "type": "string",
+                "pattern": "^[0-9]{10}$",
+                "description": "Dubai only"
+              },
+              "latitude": {
+                "type": "number",
+                "minimum": 22,
+                "maximum": 27,
+                "description": "Provide together with longitude"
+              },
+              "longitude": {
+                "type": "number",
+                "minimum": 51,
+                "maximum": 57
+              }
+            }
+          },
+          "package_description": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "instructions": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        }
+      },
+      "Delivery": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "external_order_id": {
+            "type": "string"
+          },
+          "delivery_id": {
+            "type": "integer"
+          },
+          "tracking_number": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "sequence": {
+            "type": "integer",
+            "description": "Monotonic status-history ID. Ignore duplicate or older values."
+          },
+          "currency": {
+            "const": "AED"
+          },
+          "delivery_fee": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "requires_price_approval": {
+            "type": "boolean"
+          },
+          "tracking_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Opaque tracking capability valid for 90 days; null without a configured HTTPS public origin."
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/deliveries": {
+      "post": {
+        "summary": "Create one prepaid delivery",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._:-]{16,128}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Existing delivery with the same immutable payload and key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Delivery"
+                    },
+                    "created": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Delivery created and submitted for pricing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Delivery"
+                    },
+                    "created": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or disabled delivery key"
+          },
+          "403": {
+            "description": "Paid Enterprise required"
+          },
+          "409": {
+            "description": "Reference or idempotency key reused with different data/key"
+          },
+          "413": {
+            "description": "Body exceeds 64 KiB"
+          },
+          "422": {
+            "description": "Validation failure or missing pickup address"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        }
+      }
+    },
+    "/deliveries/{order}": {
+      "get": {
+        "summary": "Read an owned delivery",
+        "parameters": [
+          {
+            "name": "order",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current safe delivery state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Delivery"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found on this connection"
+          }
+        }
+      }
+    },
+    "/delivery-connection": {
+      "get": {
+        "summary": "Check authenticated connection and pickup readiness",
+        "responses": {
+          "200": {
+            "description": "Connection ID, name, AED currency and pickup_configured flag"
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {
+    "deliveryStatus": {
+      "post": {
+        "summary": "Signed status callback",
+        "description": "HMAC-SHA256 signing secret: X-Raslo-Signature = v1=hex(HMAC(timestamp + dot + raw_body)). Verify X-Raslo-Timestamp within 300 seconds. Match X-Raslo-Event-Id to body id. Match bound delivery UUID and external_order_id. Ignore duplicate/older data.sequence. Callback delivery is at least once and may arrive out of order. Respond 2xx only after a safe update; use non-2xx for temporary binding/lock failures.",
+        "parameters": [
+          {
+            "name": "X-Raslo-Event-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Raslo-Timestamp",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Raslo-Signature",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Applied or safely ignored as duplicate/older"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "type",
+                  "created_at",
+                  "data"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "type": {
+                    "const": "delivery.status_changed"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "data": {
+                    "$ref": "#/components/schemas/Delivery"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

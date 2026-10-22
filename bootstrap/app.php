@@ -25,5 +25,5 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->dontFlash(['feed_token', 'api_key']);
+        $exceptions->dontFlash(['feed_token', 'api_key', 'webhook_secret', 'delivery_api_key']);
     })->create();

@@ -106,3 +106,8 @@ Please read [the code of conduct](CODE_OF_CONDUCT.md) and [security policy](SECU
 ## License
 
 [MIT](LICENSE).
+
+
+## Raslo / رسلو visual identity
+
+The UAE visual refresh uses an emerald, ivory and gold palette, bilingual wordmarks and a consistent route-inspired icon. See [the brand guide](docs/raslo-brand.md) for assets, typography, naming and release checks.

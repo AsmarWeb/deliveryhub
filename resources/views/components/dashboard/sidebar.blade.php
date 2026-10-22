@@ -124,8 +124,8 @@
 <aside id="dashboard-sidebar" class="dh-sidebar" aria-label="{{ __('dashboard.dashboard') }}">
     <div class="dh-sidebar-brand">
         <a href="{{ route($homeRoute) }}" class="dh-brand-link" title="Raslo">
-            <span class="dh-logo">R</span>
-            <span class="dh-label dh-brand-name">Delivery<span>Hub</span></span>
+            <span class="dh-logo"><img src="{{ asset('brand/raslo-mark.svg') }}" width="38" height="38" alt=""></span>
+            <span class="dh-label dh-brand-name">{{ app()->getLocale() === 'ar' ? 'رسلو' : 'Raslo' }}</span>
         </a>
         <button id="sidebar-collapse" class="dh-icon-button dh-desktop-toggle" type="button"
             aria-controls="dashboard-sidebar" aria-expanded="true"

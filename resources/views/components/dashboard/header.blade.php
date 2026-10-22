@@ -50,7 +50,7 @@
                     class="mb-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
 
                     <a href="{{ route('web.dashboard') }}" class="font-medium transition hover:text-blue-400">
-                        Raslo
+                        {{ $locale === 'ar' ? 'رسلو' : 'Raslo' }}
                     </a>
                         @if(auth()->user()?->hasRole('merchant'))
                             <a href="{{ route('merchant.catalog.index') }}" style="margin-inline-start:12px;font-size:13px">تكاملات Enterprise</a>

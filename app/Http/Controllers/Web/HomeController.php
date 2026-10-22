@@ -37,10 +37,10 @@ class HomeController extends Controller
         app()->setLocale($locale);
 
         $title = $isAr
-            ? 'Raslo الإمارات | انضم كشركة أو تاجر لإدارة التوصيل'
+            ? 'رسلو الإمارات | انضم كشركة أو تاجر لإدارة التوصيل'
             : 'Raslo UAE | Join as a Merchant or Business';
         $description = $isAr
-            ? 'انضم إلى Raslo في الإمارات: سجّل اهتمام شركتك أو متجرك لإدارة طلبات التوصيل والسائقين وتتبع العمليات وإثبات التسليم من منصة واحدة.'
+            ? 'انضم إلى رسلو في الإمارات: سجّل اهتمام شركتك أو متجرك لإدارة طلبات التوصيل والسائقين وتتبع العمليات وإثبات التسليم من منصة واحدة.'
             : 'Join Raslo in the UAE. Register your business interest in delivery management, driver assignments, tracking and proof of delivery on one platform.';
         $canonicalUrl = $isAr ? url('/?lang=ar') : url('/');
 
@@ -52,7 +52,7 @@ class HomeController extends Controller
                     '@id' => url('/').'#organization',
                     'name' => 'Raslo',
                     'url' => url('/'),
-                    'logo' => asset('images/deliveryhub-icon.png'),
+                    'logo' => asset('brand/raslo-icon.png'),
                     'sameAs' => [
                         'https://github.com/AsmarWeb/deliveryhub',
                         'https://github.com/AsmarWeb/deliveryhub-mobile',

@@ -334,3 +334,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin/catalog')->name('admin.
 
 Route::get('/track/{token}', PublicDeliveryTrackingController::class)
     ->where('token', '[a-f0-9]{64}')->middleware('throttle:60,1')->name('integrations.track');
+
+Route::middleware(['auth'])->controller(\App\Http\Controllers\DriverDocuments\DriverDocumentController::class)->group(function () {
+    Route::get('/driver/documents', 'index')->name('driver.documents.index')->middleware('throttle:60,1');
+    Route::post('/driver/documents', 'store')->middleware('throttle:10,1')->name('driver.documents.store');
+    Route::get('/driver/documents/{document}/file', 'file')->whereUuid('document')->name('driver.documents.file')->middleware('throttle:60,1');
+});
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/admin/drivers/{driver}', [\App\Http\Controllers\DriverDocuments\AdminDriverDocumentsController::class, 'show'])->whereNumber('driver')->name('admin.drivers.show');
+    Route::post('/admin/driver-documents/{document}/review', [\App\Http\Controllers\DriverDocuments\AdminDriverDocumentsController::class, 'review'])->whereUuid('document')->name('admin.drivers.documents.review')->middleware('throttle:30,1');
+});

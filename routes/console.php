@@ -113,3 +113,8 @@ Artisan::command('integrations:retry-webhook {event}', function () {
     app(DeliveryWebhookOutbox::class)->enqueue($event->id);
     $this->info('Delivery webhook queued.');
 });
+
+Artisan::command('drivers:document-reminders', function () {
+    $this->info('Document notifications: '.app(\App\Services\Drivers\DriverDocumentService::class)->reminders());
+});
+Schedule::command('drivers:document-reminders')->dailyAt('08:00')->timezone('Asia/Dubai')->withoutOverlapping();

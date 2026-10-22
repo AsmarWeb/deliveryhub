@@ -269,3 +269,10 @@ Route::middleware([
 });
 
 require __DIR__.'/catalog.php';
+
+// Document onboarding remains available to pending drivers; ownership is checked by profile.
+Route::middleware(['auth:sanctum'])->prefix('v1/driver/documents')->controller(\App\Http\Controllers\DriverDocuments\DriverDocumentController::class)->group(function () {
+    Route::get('/', 'index')->middleware('throttle:60,1');
+    Route::post('/', 'store')->middleware('throttle:10,1');
+    Route::get('/{document}/file', 'file')->whereUuid('document')->middleware('throttle:60,1');
+});

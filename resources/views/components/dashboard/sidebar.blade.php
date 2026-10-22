@@ -120,6 +120,10 @@
                 'label' => __('dashboard.my_assignments'),
                 'icon' => 'truck',
             ],
+            [
+                'route' => 'driver.documents.index', 'active' => 'driver.documents.*',
+                'label' => $isAr ? 'مستنداتي' : 'My documents', 'icon' => 'users',
+            ],
         ];
     }
 

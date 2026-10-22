@@ -150,7 +150,7 @@
                                 {{-- Driver --}}
                                 <td class="px-5 py-4">
                                     <div class="font-semibold text-white">
-                                        {{ $driver->user?->name ?? ($isAr ? 'غير معروف' : 'Unknown') }}
+                                        <a class="underline underline-offset-4" href="{{ route('admin.drivers.show', $driver) }}">{{ $driver->user?->name ?? ($isAr ? 'غير معروف' : 'Unknown') }}</a>
                                     </div>
 
                                     <div class="mt-1 text-xs text-slate-400">
@@ -231,6 +231,7 @@
                                 {{-- Actions --}}
                                 <td class="px-5 py-4">
                                     <div class="flex flex-col items-start gap-2">
+                                        <a href="{{ route('admin.drivers.show', $driver) }}" class="inline-flex rounded-lg bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-400">{{ $isAr ? 'الملف والمستندات' : 'Profile & documents' }}</a>
                                         @if ($hasLocation)
                                             <a href="{{ route('admin.drivers.location', $driver) }}"
                                                 class="inline-flex rounded-lg bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-400 hover:bg-blue-500/20">

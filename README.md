@@ -125,3 +125,7 @@ The optional WooCommerce 0.2.0 bridge forwards new eligible prepaid UAE orders t
 ## Emirate-based automatic pricing
 
 Optional directed UAE emirate rates cover orders without coordinates. Configure your own rates in the admin pricing settings; merchant price approval remains required. See [the pricing guide](docs/emirate-delivery-pricing.md).
+
+## Driver documents
+
+Drivers can upload private identity and vehicle documents, while administrators review versioned files inside each driver profile. The mobile account menus include My documents and Store integrations. See [the document workflow](docs/driver-documents.md).

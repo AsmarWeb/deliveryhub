@@ -19,6 +19,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
+use Raslo\WooCommerce\ProductMapper;
 use Tests\TestCase;
 
 class EnterpriseCatalogTest extends TestCase
@@ -365,5 +366,26 @@ class EnterpriseCatalogTest extends TestCase
         $this->send($key, [$this->product(['external_id' => 'Product-A']), $this->product(['external_id' => 'product-a'])])->assertOk()->assertJsonPath('changed', 2);
         $this->assertDatabaseCount('catalog_products', 2);
         $this->assertNotSame(CatalogProduct::first()->getRawOriginal('external_key'), CatalogProduct::latest('id')->first()->getRawOriginal('external_key'));
+    }
+
+    public function test_feed_credentials_can_be_rotated_without_creating_another_connection(): void
+    {
+        [$id] = $this->connect($this->merchant(), ['mode' => 'feed', 'feed_url' => 'https://store.example/feed', 'feed_token' => str_repeat('s', 32)]);
+        $this->patchJson('/api/v1/merchant/integrations/'.$id, ['feed_token' => str_repeat('n', 32)])
+            ->assertOk()->assertJsonMissingPath('data.feed_token');
+        $this->assertSame(str_repeat('n', 32), CatalogConnection::find($id)->feed_token);
+        $this->patchJson('/api/v1/merchant/integrations/'.$id, ['feed_url' => 'https://evil.example/feed'])->assertUnprocessable();
+        $this->assertDatabaseCount('catalog_connections', 1);
+    }
+
+    public function test_woocommerce_normalized_product_is_accepted_by_catalog_api(): void
+    {
+        require_once base_path('tests/Support/WordPressCatalogStubs.php');
+        require_once base_path('integrations/woocommerce/raslo-woocommerce/includes/class-product-mapper.php');
+        [$id, $key] = $this->connect($this->merchant());
+        $product = ProductMapper::map(new \RasloFakeProduct(42));
+        $product['source_updated_at'] = now()->subSecond()->format('Y-m-d\TH:i:sP');
+        $this->send($key, [$product])->assertOk()->assertJsonPath('changed', 1);
+        $this->assertDatabaseHas('catalog_products', ['external_id' => 'wc:42', 'price_minor' => 12900]);
     }
 }

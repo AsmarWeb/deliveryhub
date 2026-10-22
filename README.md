@@ -21,7 +21,7 @@ The companion app has been tested on an Android development build with a real pu
 
 ## Enterprise catalog
 
-Paid Enterprise merchants can connect stores, synchronize products using a shared Push API or compatible HTTPS feed, and publish approved products to web and mobile discovery. Initial feed import starts on connection creation and repeats every 15 minutes. Native Shopify/WooCommerce adapters are not included. [Setup and API contract](docs/enterprise-catalog.md).
+Paid Enterprise merchants can connect stores, synchronize products using a shared Push API or compatible HTTPS feed, and publish approved products to web and mobile discovery. Initial feed import starts on connection creation and repeats every 15 minutes. A WooCommerce Feed connector is included as pilot 0.1.0; Shopify remains planned. [Setup and API contract](docs/enterprise-catalog.md).
 
 ## E-commerce delivery direction
 
@@ -44,7 +44,7 @@ The store continues to own its products, checkout, and payment. Raslo will provi
 | Automation and subscriptions | Implemented; validation continues | Recurring deliveries, dispatch, Stripe billing |
 | Enterprise catalog integration | Implemented | Store keys, paid entitlement, push/feed product sync, run history, publication review, web/mobile discovery |
 | Delivery integration API | Planned | Serviceability and quotes, booking, tracking, signed outgoing webhooks, sandbox |
-| Store connectors | Planned | Shopify, WooCommerce, and custom stores using the shared integration layer |
+| Store connectors | WooCommerce pilot; Shopify planned | Installable WooCommerce Feed plugin and shared contract for custom stores |
 | Production pilot | Planned | End-to-end merchant trials, failure recovery, monitoring, deployment hardening |
 
 ## Stack
@@ -91,6 +91,8 @@ Application endpoints currently use `/api/v1` with Sanctum authentication and re
 - [Phone push](docs/phone-push.md)
 - [Automatic dispatch](docs/automatic-dispatch.md)
 - [Stripe billing](docs/stripe-billing.md)
+- [Automatic webhook recovery](docs/stripe-webhook-recovery.md)
+- [WooCommerce connector](integrations/woocommerce/README.md)
 - [Raslo rename and compatibility](docs/raslo-rebrand.md)
 
 For push, configure your own Expo/Firebase credentials and use a development build. The scheduler handles `notifications:send-push`; enabling it alone does not verify device delivery.

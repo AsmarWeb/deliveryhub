@@ -13,7 +13,7 @@ Raslo now provides a provider-neutral product synchronization contract, a public
 - Public product cards, search, pagination, images and store links. Only approved stores with an active connection, valid Enterprise entitlement, active products and positive stock are visible.
 - Queue-backed sync runs with counters and safe failure codes. Missing products are not automatically deleted on a partial/failed import.
 
-**A store URL alone cannot expose every provider's catalog.** The source must implement this contract, or an adapter must map that provider's products into it. This release includes a reference feed server and push client. It does not include a Shopify OAuth app or an installable WooCommerce plugin. Product display is implemented; carts, reservations, checkout, commissions and marketplace payouts are not.
+**A store URL alone cannot expose every provider's catalog.** The source must implement this contract, or an adapter must map that provider's products into it. This release includes a reference feed server and push client. An installable WooCommerce Feed connector (pilot 0.1.0) is now included under `integrations/woocommerce`; a Shopify OAuth app remains future work. Product display is implemented; carts, reservations, checkout, commissions and marketplace payouts are not.
 
 ## Setup
 
@@ -69,7 +69,7 @@ Create body:
 }
 ```
 
-Use `mode: "push"` and omit the feed fields for a push-only connection. Host approval is an operator configuration; merchants cannot approve their own arbitrary fetch destinations. Feed credentials are encrypted at rest and excluded from responses. An existing connection's mode, scopes and feed credentials cannot be edited in this version; disable it and create a replacement when these change. Rotation changes only the Raslo integration key.
+Use `mode: "push"` and omit the feed fields for a push-only connection. Host approval is an operator configuration; merchants cannot approve their own arbitrary fetch destinations. Feed credentials are encrypted at rest and excluded from responses. A connection’s mode and scopes are fixed in this version. Feed URL/token can now be updated using PATCH or the merchant web form; URLs remain subject to the approved-host policy and tokens remain encrypted. Rotation of the Raslo integration key is separate from rotation of a source Feed token.
 
 ## Product API (store integration key)
 
@@ -135,4 +135,4 @@ Jobs recheck Enterprise entitlement and connection state before each page and da
 - `examples/catalog/feed.mjs`: a token-protected reference feed backed by an actual mapped product file; put it behind HTTPS on an approved store hostname.
 - `docs/catalog-openapi.json`: machine-readable API contract.
 
-Recommended next work: native WooCommerce and Shopify adapters with authorized installation and uninstall handling; event-based incremental sync with periodic reconciliation; per-product moderation and image caching; then cart/checkout, stock reservation and marketplace settlement as a distinct phase.
+Recommended next work: acceptance testing of the included WooCommerce connector and a Shopify adapter with authorized installation/uninstall handling; event-based incremental sync with periodic reconciliation; per-product moderation and image caching; then cart/checkout, stock reservation and marketplace settlement as a distinct phase.

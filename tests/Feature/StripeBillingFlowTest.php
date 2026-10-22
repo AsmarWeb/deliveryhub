@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\Billing\StripeWebhookController;
+use App\Listeners\SyncStripeMerchantSubscription;
 use App\Models\MerchantSubscription;
 use App\Models\Role;
 use App\Models\SubscriptionPlan;
@@ -10,8 +11,10 @@ use App\Services\Billing\MerchantSubscriptionAccess;
 use App\Services\Billing\StripeInvoicePeriod;
 use App\Services\Billing\StripePlanPrice;
 use App\Services\Billing\StripeSubscriptionState;
+use App\Services\Billing\StripeWebhookInbox;
 use App\Services\Catalog\EnterpriseCatalogAccess;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Cashier\Events\WebhookHandled;
 use Tests\Support\CreatesRecurringDeliveries;
 use Tests\TestCase;
 
@@ -27,6 +30,7 @@ class StripeBillingFlowTest extends TestCase
 
     private function postEvent(array $event)
     {
+        $event['id'] ??= 'evt_'.hash('sha256', json_encode($event));
         $payload = json_encode($event);
         $timestamp = time();
         $signature = hash_hmac('sha256', $timestamp.'.'.$payload, 'whsec_test');
@@ -90,15 +94,24 @@ class StripeBillingFlowTest extends TestCase
         $this->postJson('/stripe/webhook', ['type' => 'invoice.paid'])->assertStatus(503);
     }
 
-    public function test_invoice_before_subscription_is_not_acknowledged_and_can_retry(): void
+    public function test_invoice_before_subscription_is_saved_and_retried_automatically(): void
     {
-        $event = ['id' => 'evt_early', 'type' => 'invoice.paid', 'data' => ['object' => [
-            'status' => 'paid', 'subscription' => 'sub_test_1',
-        ]]];
-        $this->postEvent($event)->assertStatus(500);
         $subscription = $this->paidSubscription();
-        $event['data']['object'] = $this->invoice($subscription);
+        $invoice = $this->invoice($subscription);
+        $cashier = $subscription->cashierSubscription;
+        $stripeId = $cashier->stripe_id;
+        $subscription->delete();
+        $cashier->update(['stripe_id' => 'sub_temporarily_missing']);
+        $event = ['id' => 'evt_early', 'type' => 'invoice.paid', 'data' => ['object' => $invoice]];
         $this->postEvent($event)->assertOk();
+        $this->assertDatabaseHas('stripe_webhook_inbox', ['id' => 'evt_early', 'status' => 'retry', 'error_code' => 'SUBSCRIPTION_PENDING']);
+        $this->assertDatabaseCount('merchant_subscriptions', 0);
+        $cashier->update(['stripe_id' => $stripeId]);
+        app(SyncStripeMerchantSubscription::class)->handle(new WebhookHandled([
+            'type' => 'customer.subscription.created', 'data' => ['object' => ['id' => $stripeId]],
+        ]));
+        $this->assertDatabaseHas('stripe_webhook_inbox', ['id' => 'evt_early', 'status' => 'processed', 'attempts' => 2]);
+        $this->assertDatabaseCount('merchant_subscriptions', 1);
     }
 
     public function test_unpaid_invoice_does_not_extend_access(): void
@@ -218,9 +231,10 @@ class StripeBillingFlowTest extends TestCase
             'pricing' => ['price_details' => ['price' => 'price_business']],
         ]]]]);
         $event = ['type' => 'invoice.paid', 'data' => ['object' => $invoice]];
-        $this->postEvent($event)->assertStatus(500);
-        $subscription->cashierSubscription->update(['stripe_price' => 'price_business']);
         $this->postEvent($event)->assertOk();
+        $this->assertDatabaseHas('stripe_webhook_inbox', ['status' => 'retry', 'error_code' => 'PRICE_PENDING']);
+        $subscription->cashierSubscription->update(['stripe_price' => 'price_business']);
+        app(StripeWebhookInbox::class)->wake($subscription->cashierSubscription->stripe_id);
         $this->assertSame('business', $subscription->fresh()->plan->slug);
     }
 

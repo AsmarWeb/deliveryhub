@@ -3,6 +3,8 @@
 namespace App\Listeners;
 
 use App\Services\Billing\StripeSubscriptionSyncService;
+use App\Services\Billing\StripeSyncPending;
+use App\Services\Billing\StripeWebhookInbox;
 use Laravel\Cashier\Events\WebhookHandled;
 use Laravel\Cashier\Subscription;
 
@@ -16,6 +18,15 @@ class SyncStripeMerchantSubscription
     {
         $payload = $event->payload;
         $type = $payload['type'] ?? null;
+
+        if (in_array($type, ['customer.subscription.created', 'customer.subscription.updated'], true)) {
+            $id = $payload['data']['object']['id'] ?? null;
+            if (is_string($id) && $id !== '') {
+                app(StripeWebhookInbox::class)->wake($id);
+            }
+
+            return;
+        }
 
         // Subscription events alone do not confirm payment.
         if ($type !== 'invoice.paid') {
@@ -48,7 +59,7 @@ class SyncStripeMerchantSubscription
         if (! $subscription) {
             // Stripe may deliver invoice.paid before subscription.created.
             // A non-2xx response makes Stripe retry after Cashier has stored it.
-            throw new \RuntimeException('Subscription not yet available; retry invoice webhook.');
+            throw new StripeSyncPending('SUBSCRIPTION_PENDING');
         }
 
         $this->sync->sync($subscription, true, $invoice);

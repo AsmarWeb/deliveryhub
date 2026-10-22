@@ -238,7 +238,7 @@
         }
       ],
       "patch": {
-        "summary": "Enable/disable an own connection",
+        "summary": "Update status or Feed URL/token on an own connection",
         "security": [
           {
             "MerchantToken": []
@@ -264,9 +264,6 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "status"
-                ],
                 "properties": {
                   "status": {
                     "type": "string",
@@ -274,8 +271,19 @@
                       "active",
                       "disabled"
                     ]
+                  },
+                  "feed_url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "feed_token": {
+                    "type": "string",
+                    "writeOnly": true,
+                    "minLength": 16,
+                    "maxLength": 500
                   }
-                }
+                },
+                "minProperties": 1
               }
             }
           }

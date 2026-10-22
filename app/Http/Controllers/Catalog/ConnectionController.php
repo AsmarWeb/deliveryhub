@@ -64,15 +64,27 @@ class ConnectionController extends Controller
     public function update(Request $request, int $connection)
     {
         $owned = $this->owned($request, $connection);
-        $data = $request->validate(['status' => ['required', 'in:active,disabled']]);
+        $data = $request->validate([
+            'status' => ['sometimes', 'required', 'in:active,disabled'],
+            'feed_url' => ['sometimes', 'required', 'url:https', 'max:2048'],
+            'feed_token' => ['sometimes', 'required', 'string', 'min:16', 'max:500', 'regex:/^[A-Za-z0-9._~+\/=\-]+$/'],
+        ]);
+        abort_if($data === [], 422, 'No connection settings supplied.');
+        if (isset($data['feed_url']) || isset($data['feed_token'])) {
+            abort_unless($owned->mode === 'feed', 422, 'Feed credentials require a Feed connection.');
+        }
+        if (isset($data['feed_url'])) {
+            app(CatalogFeedClient::class)->hostname($data['feed_url']);
+        }
         DB::transaction(function () use ($owned, $data) {
             CatalogConnection::whereKey($owned->id)->lockForUpdate()->firstOrFail()->update($data);
         });
-        if ($data['status'] === 'active' && $owned->mode === 'feed') {
-            app(CatalogSyncScheduler::class)->request($owned->fresh());
+        $owned->refresh();
+        if ($owned->status === 'active' && $owned->mode === 'feed') {
+            app(CatalogSyncScheduler::class)->request($owned);
         }
 
-        return response()->json(['data' => $owned->fresh()]);
+        return response()->json(['data' => $owned]);
     }
 
     public function rotate(Request $request, int $connection)

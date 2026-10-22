@@ -1,0 +1,46 @@
+name: raslo-woo-lab
+services:
+  db:
+    image: mariadb:11.4
+    environment:
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wordpress
+      MARIADB_PASSWORD: raslo-local-demo-db
+      MARIADB_ROOT_PASSWORD: raslo-local-demo-root
+    volumes:
+      - database:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      retries: 30
+  wordpress:
+    image: wordpress:php8.3-apache
+    ports:
+      - "127.0.0.1:8092:80"
+    environment: &wp-env
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: raslo-local-demo-db
+      WP_CLI_CACHE_DIR: /tmp/wp-cli-cache
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - site:/var/www/html
+      - ../raslo-woocommerce:/var/www/html/wp-content/plugins/raslo-woocommerce:ro
+  cli:
+    image: wordpress:cli-php8.3
+    user: "33:33"
+    environment: *wp-env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - site:/var/www/html
+      - ../raslo-woocommerce:/var/www/html/wp-content/plugins/raslo-woocommerce:ro
+      - ./seed.php:/tmp/raslo-seed.php:ro
+    profiles: ["tools"]
+volumes:
+  database:
+  site:

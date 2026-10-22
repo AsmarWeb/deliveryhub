@@ -11,6 +11,7 @@ STRIPE_SECRET=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_PRICE_GROWTH=price_...
 STRIPE_PRICE_BUSINESS=price_...
+STRIPE_PRICE_ENTERPRISE=price_...
 CASHIER_CURRENCY=aed
 ```
 
@@ -38,8 +39,8 @@ In production register `/stripe/webhook` on the backend's HTTPS origin as a snap
 
 ## Behavior
 
-- A custom Cashier controller handles `invoice.paid`, retains Cashier's signature verification and dispatches the existing synchronous listener. Missing signing configuration returns 503; unsigned events are rejected when configured.
-- A paid invoice arriving before the local Cashier subscription returns a non-success response. Stripe retries it; the event is not silently lost. Monitor unsuccessful deliveries in Stripe, and replay them if the retry window was exhausted while the listener was broken.
+- A custom Cashier controller handles `invoice.paid`, retains Cashier's signature verification and queues the existing subscription synchronization rules through a durable inbox. Missing signing configuration returns 503; unsigned events are rejected when configured.
+- Verified paid invoices are saved to an encrypted durable inbox before acknowledgment. If a subscription is not available yet, Raslo retries in the background and wakes pending invoices after related subscription events. Monitor `billing:webhooks`; see [automatic recovery](stripe-webhook-recovery.md).
 - Only configured plan prices and matching customer/currency can grant access. Access dates come from the paid invoice's subscription line, rather than a later potentially unpaid remote period. Replays cannot duplicate the local subscription or shorten a newer confirmed period.
 - Periods already confirmed as paid remain available until their end when Stripe reports `past_due` or `canceled`. No new paid period is created by a failed renewal, a redirect, a trial or a subscription status event alone. `unpaid`, expired and incomplete subscriptions have no access. Manual subscriptions can grant ordinary plan access; automation still requires Stripe.
 - API display, commissions and automation share the same access service. The billing API returns `has_access`, `stripe_status`, automation availability, usage and allowance.
@@ -55,7 +56,11 @@ In production register `/stripe/webhook` on the backend's HTTPS origin as a snap
 5. Repeat the webhook delivery. Verify the local subscription is not duplicated.
 6. Cancel a checkout. Confirm no access was created by the return page.
 7. Manage renewal/cancellation through the portal. Verify paid access remains until its confirmed period ends and does not extend without a new paid invoice.
-8. Test a failed renewal, expired access and a delayed/replayed old invoice. Confirm no unpaid renewal is unlocked.
+8. Test a failed renewal, expired access and a delayed/replayed old invoice and an invoice that arrives before its subscription. Confirm no unpaid renewal is unlocked.
 9. Verify the webhook rejects invalid signatures; do not disable verification to make a test succeed.
 
 Backend tests include signed routing, signatures, configuration, invoice-before-subscription retry, duplicate delivery, unpaid and delayed invoices, legacy/new invoice structures, price validation, shared access and non-activating return pages. They were syntax-checked here; PHP/PHPUnit must be run in the project's Docker environment. Mobile tests/typecheck/lint and platform export are checked separately.
+
+## WooCommerce catalog connector
+
+The catalog connector is separate from Stripe billing. See [WooCommerce setup](../integrations/woocommerce/README.md). Only paid Enterprise access permits Raslo to synchronize/publish the connected catalog.

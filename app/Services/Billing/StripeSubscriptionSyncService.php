@@ -60,7 +60,7 @@ class StripeSubscriptionSyncService
         }
 
         if (in_array($subscription->stripe_status, ['incomplete', 'trialing'], true)) {
-            throw new \RuntimeException('Subscription state is not ready; retry paid invoice.');
+            throw new StripeSyncPending('STATE_PENDING');
         }
 
         if (! in_array($subscription->stripe_status, ['active', 'past_due', 'canceled'], true)
@@ -78,7 +78,7 @@ class StripeSubscriptionSyncService
             // when the local current price already matches authoritative state.
             $remotePrice = app(StripeSubscriptionState::class)->currentPrice($subscription->stripe_id);
             if ($remotePrice !== $subscription->stripe_price) {
-                throw new \RuntimeException('Subscription price update pending; retry paid invoice.');
+                throw new StripeSyncPending('PRICE_PENDING');
             }
 
             return;

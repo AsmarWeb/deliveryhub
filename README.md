@@ -111,3 +111,8 @@ Please read [the code of conduct](CODE_OF_CONDUCT.md) and [security policy](SECU
 ## Raslo / رسلو visual identity
 
 The UAE visual refresh uses an emerald, ivory and gold palette, bilingual wordmarks and a consistent route-inspired icon. See [the brand guide](docs/raslo-brand.md) for assets, typography, naming and release checks.
+
+
+## Store integration dashboard
+
+Merchants can set up WooCommerce, download its plugin and OpenAPI contract, inspect connections, and check a feed from the shared dashboard. Administrators review publication from the sidebar. See [the workspace guide](docs/store-integration-dashboard.md). Native Shopify integration and order forwarding are not included.

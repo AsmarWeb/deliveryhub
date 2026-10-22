@@ -117,6 +117,10 @@ Route::middleware('auth')->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('/create', 'create')->name('create');
             Route::post('/', 'store')->name('store');
+            Route::get('/platforms', 'platforms')->name('platforms');
+            Route::get('/platforms/woocommerce/download', 'download')->name('download');
+            Route::get('/platforms/api/openapi', 'contract')->name('contract');
+            Route::get('/platforms/{platform}', 'guide')->whereIn('platform', ['woocommerce', 'api'])->name('guide');
             Route::get('/{address}/edit', 'edit')
                 ->whereNumber('address')->name('edit');
             Route::put('/{address}', 'update')
@@ -313,9 +317,14 @@ Route::get('/catalog', [PublicCatalogController::class, 'web'])->middleware('thr
 Route::middleware(['auth', 'account.active', 'throttle:20,1'])->prefix('merchant/integrations')->name('merchant.catalog.')->controller(CatalogDashboardController::class)->group(function () {
     Route::get('/', 'index')->name('index');
     Route::post('/', 'store')->name('store');
+    Route::get('/platforms', 'platforms')->name('platforms');
+    Route::get('/platforms/woocommerce/download', 'download')->name('download');
+    Route::get('/platforms/api/openapi', 'contract')->name('contract');
+    Route::get('/platforms/{platform}', 'guide')->whereIn('platform', ['woocommerce', 'api'])->name('guide');
     Route::post('/{connection}/rotate-key', 'rotate')->whereNumber('connection')->name('rotate');
     Route::post('/{connection}/status', 'update')->whereNumber('connection')->name('status');
     Route::post('/{connection}/sync', 'sync')->whereNumber('connection')->name('sync');
+    Route::post('/{connection}/check', 'check')->whereNumber('connection')->name('check');
 });
 Route::middleware(['auth', 'role:admin'])->prefix('admin/catalog')->name('admin.catalog.')->controller(CatalogDashboardController::class)->group(function () {
     Route::get('/', 'admin')->name('index');

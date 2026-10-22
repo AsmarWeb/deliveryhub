@@ -7,6 +7,7 @@ use Raslo\WooCommerce\Connector;
 use Raslo\WooCommerce\ProductMapper;
 
 require_once __DIR__.'/../../Support/WordPressCatalogStubs.php';
+require_once __DIR__.'/../../Support/WooCommerceClock.php';
 require_once __DIR__.'/../../../integrations/woocommerce/raslo-woocommerce/includes/class-product-mapper.php';
 require_once __DIR__.'/../../../integrations/woocommerce/raslo-woocommerce/includes/class-connector.php';
 
@@ -14,6 +15,7 @@ class WooCommerceConnectorTest extends TestCase
 {
     protected function setUp(): void
     {
+        $GLOBALS['raslo_wc_test_time'] = \time();
         $GLOBALS['wp_options'] = ['raslo_wc_enabled' => true];
         $GLOBALS['wc_currency'] = 'AED';
         $GLOBALS['wc_products'] = [];
@@ -93,7 +95,7 @@ class WooCommerceConnectorTest extends TestCase
         $product->values['get_price'] = '99.00';
         $connector->sync(42);
         $this->assertNotEmpty($GLOBALS['wp_scheduled']);
-        sleep(2);
+        $GLOBALS['raslo_wc_test_time'] += 2;
         $connector->sync(42);
         $updated = $connector->feed($this->request())->data['products'][0];
         $this->assertSame(9900, $updated['price_minor']);
@@ -108,7 +110,7 @@ class WooCommerceConnectorTest extends TestCase
         $GLOBALS['wc_products'] = [40 => $parent, 42 => $child];
         $connector->sync(42);
         unset($GLOBALS['wc_products'][40], $GLOBALS['wc_products'][42]);
-        sleep(2);
+        $GLOBALS['raslo_wc_test_time'] += 2;
         $connector->sync(40);
         $connector->sync(42);
         $products = $connector->feed($this->request())->data['products'];

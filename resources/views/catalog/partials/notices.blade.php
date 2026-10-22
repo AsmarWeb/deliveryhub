@@ -1,0 +1,3 @@
+@if($errors->any())<div class="notice error" role="alert"><ul class="error-list">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+@if(session('status'))<div class="notice" role="status">{{ session('status') }}</div>@endif
+@if(!$canConnect)<div class="notice"><strong>{{ $t('الربط متاح ضمن Enterprise المدفوعة','Connections require a paid Enterprise plan') }}</strong><p>{{ $t('يمكنك استعراض طرق الربط الآن. إنشاء الربط والمزامنة والتنزيل تتطلب اشتراك Enterprise مدفوعًا وساريًا. لا تكفي الموافقة على النشر لتفعيل الاشتراك.','Explore the available methods below. Creating connections, syncing and downloading require a current paid Enterprise subscription. Publication approval does not grant subscription access.') }}</p></div>@endif

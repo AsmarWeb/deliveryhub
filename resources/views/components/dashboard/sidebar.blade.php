@@ -33,6 +33,12 @@
                 'icon' => 'users',
             ],
             [
+                'route' => 'admin.catalog.index',
+                'active' => 'admin.catalog.*',
+                'label' => $isAr ? 'مراجعة المتاجر' : 'Store review',
+                'icon' => 'store',
+            ],
+            [
                 'route' => 'admin.drivers.index',
                 'active' => 'admin.drivers.*',
                 'label' => $isAr ? 'إدارة السائقين' : 'Manage Drivers',
@@ -78,6 +84,18 @@
                 'active' => 'merchant.deliveries.create',
                 'label' => __('dashboard.create_delivery'),
                 'icon' => 'plus',
+            ],
+            [
+                'route' => 'merchant.catalog.index',
+                'active' => ['merchant.catalog.index'],
+                'label' => $isAr ? 'متاجري والتكاملات' : 'My stores & integrations',
+                'icon' => 'store',
+            ],
+            [
+                'route' => 'merchant.catalog.platforms',
+                'active' => ['merchant.catalog.platforms', 'merchant.catalog.guide'],
+                'label' => $isAr ? 'مركز الربط والإضافات' : 'Connectors & plugins',
+                'icon' => 'connect',
             ],
             [
                 'route' => 'merchant.addresses.index',
@@ -136,7 +154,7 @@
 
     <nav class="dh-sidebar-nav" aria-label="{{ app()->getLocale() === 'ar' ? 'التنقل الرئيسي' : 'Main navigation' }}">
         @foreach ($items as $item)
-            @php $active = request()->routeIs($item['active']); @endphp
+            @php $active = request()->routeIs(...(array) $item['active']); @endphp
             <a href="{{ route($item['route']) }}" class="dh-nav-item {{ $active ? 'dh-active' : '' }}"
                 title="{{ $item['label'] }}" @if ($active) aria-current="page" @endif>
                 <span class="dh-nav-icon" aria-hidden="true">
@@ -148,6 +166,12 @@
                             </svg>
                         @break
 
+                        @case('store')
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 10v11h16V10M3 10l2-7h14l2 7M3 10c0 3 5 3 5 0 0 3 8 3 8 0 0 3 5 3 5 0M9 21v-7h6v7" /></svg>
+                        @break
+                        @case('connect')
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m10 14 4-4M8 16l-2 2a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0M16 8l2-2a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0" transform="translate(1 0) scale(.92)" /></svg>
+                        @break
                         @case('package')
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                                 <path stroke-linecap="round" stroke-linejoin="round"

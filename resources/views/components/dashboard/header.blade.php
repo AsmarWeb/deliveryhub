@@ -12,6 +12,9 @@
     $isDashboard = request()->routeIs('web.dashboard');
 
     $pageTitle = match (true) {
+        request()->routeIs('admin.catalog.*') => $locale === 'ar' ? 'مراجعة المتاجر' : 'Store review',
+        request()->routeIs('merchant.catalog.platforms', 'merchant.catalog.guide') => $locale === 'ar' ? 'مركز الربط والإضافات' : 'Connectors & plugins',
+        request()->routeIs('merchant.catalog.*') => $locale === 'ar' ? 'متاجري والتكاملات' : 'My stores & integrations',
         request()->routeIs('merchant.deliveries.create') => __('deliveries.create_delivery'),
 
         request()->routeIs('merchant.deliveries.index') => __('dashboard.my_deliveries'),
@@ -52,14 +55,6 @@
                     <a href="{{ route('web.dashboard') }}" class="font-medium transition hover:text-blue-400">
                         {{ $locale === 'ar' ? 'رسلو' : 'Raslo' }}
                     </a>
-                        @if(auth()->user()?->hasRole('merchant'))
-                            <a href="{{ route('merchant.catalog.index') }}" style="margin-inline-start:12px;font-size:13px">تكاملات Enterprise</a>
-                        @endif
-                        @if(auth()->user()?->hasRole('admin'))
-                            <a href="{{ route('admin.catalog.index') }}" style="margin-inline-start:12px;font-size:13px">مراجعة المتاجر</a>
-                        @endif
-
-
                     <span aria-hidden="true">/</span>
 
                     <span>{{ $role }}</span>

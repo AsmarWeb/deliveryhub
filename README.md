@@ -121,3 +121,7 @@ Merchants can set up WooCommerce, download its plugin and OpenAPI contract, insp
 ## Enterprise delivery-order API
 
 The optional WooCommerce 0.2.0 bridge forwards new eligible prepaid UAE orders to the existing Raslo pricing/approval workflow. Dedicated delivery keys, idempotency, signed retryable status callbacks and private customer tracking are documented in [the Delivery API guide](docs/store-delivery-api.md). The pilot requires real WordPress/MySQL checkout acceptance before production.
+
+## Emirate-based automatic pricing
+
+Optional directed UAE emirate rates cover orders without coordinates. Configure your own rates in the admin pricing settings; merchant price approval remains required. See [the pricing guide](docs/emirate-delivery-pricing.md).

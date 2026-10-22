@@ -7,6 +7,7 @@ use App\Models\Delivery;
 use App\Models\DeliveryPricingSetting;
 use App\Models\User;
 use App\Services\Deliveries\DeliveryTransitionService;
+use App\Support\UaeAddressFields;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -40,28 +41,48 @@ class AutomaticDeliveryPricingService
                 return null;
             }
 
-            try {
-                $quote = $this->calculator->calculate(
-                    $locked->pickupAddress,
-                    $locked->dropoffAddress,
-                    (float) $settings->base_fee,
-                    (float) $settings->price_per_km,
-                );
-            } catch (InvalidArgumentException) {
-                return null;
-            }
+            $hasCoordinates = $locked->pickupAddress->latitude !== null
+                && $locked->pickupAddress->longitude !== null
+                && $locked->dropoffAddress->latitude !== null
+                && $locked->dropoffAddress->longitude !== null;
 
-            if (
-                $quote['distance_km'] >
-                (float) $settings->maximum_distance_km
-            ) {
-                return null;
+            if ($hasCoordinates) {
+                try {
+                    $quote = $this->calculator->calculate(
+                        $locked->pickupAddress, $locked->dropoffAddress,
+                        (float) $settings->base_fee, (float) $settings->price_per_km,
+                    );
+                } catch (InvalidArgumentException) {
+                    return null;
+                }
+                if ($quote['distance_km'] > (float) $settings->maximum_distance_km) {
+                    return null;
+                }
+                $fee = max($quote['delivery_fee'], (float) $settings->minimum_fee);
+                $metadata = [
+                    'pricing_method' => 'haversine', 'distance_km' => $quote['distance_km'],
+                    'base_fee' => $quote['base_fee'], 'price_per_km' => $quote['price_per_km'],
+                ];
+            } else {
+                if (! $settings->emirate_pricing_enabled) {
+                    return null;
+                }
+                $from = $locked->pickupAddress->emirate;
+                $to = $locked->dropoffAddress->emirate;
+                if (! in_array($from, UaeAddressFields::EMIRATES, true)
+                    || ! in_array($to, UaeAddressFields::EMIRATES, true)) {
+                    return null;
+                }
+                $rate = $settings->emirate_rates[$from][$to] ?? null;
+                if ($rate === null || ! is_numeric($rate) || (float) $rate < 0) {
+                    return null;
+                }
+                $fee = max((float) $rate, (float) $settings->minimum_fee);
+                $metadata = [
+                    'pricing_method' => 'emirate', 'pickup_emirate' => $from,
+                    'dropoff_emirate' => $to, 'emirate_rate' => (float) $rate,
+                ];
             }
-
-            $fee = max(
-                $quote['delivery_fee'],
-                (float) $settings->minimum_fee
-            );
 
             $locked->delivery_fee = round($fee, 2);
             $locked->currency = 'AED';
@@ -72,16 +93,12 @@ class AutomaticDeliveryPricingService
                 DeliveryStatus::Priced,
                 $actor,
                 'Automatically calculated delivery price',
-                [
+                array_merge($metadata, [
                     'automation' => true,
-                    'pricing_method' => 'haversine',
-                    'distance_km' => $quote['distance_km'],
-                    'base_fee' => $quote['base_fee'],
-                    'price_per_km' => $quote['price_per_km'],
                     'minimum_fee' => (float) $settings->minimum_fee,
                     'calculated_fee' => $locked->delivery_fee,
                     'currency' => 'AED',
-                ]
+                ])
             );
         });
     }

@@ -287,4 +287,20 @@ class StoreDeliveryIntegrationTest extends TestCase
         $this->expectException(ValidationException::class);
         app(DeliveryWebhookTransport::class)->send('https://127.0.0.1/internal', '{}', []);
     }
+    public function test_store_order_without_coordinates_uses_emirate_rate_and_still_needs_approval(): void
+    {
+        [$connection, $key] = $this->connection();
+        \App\Models\DeliveryPricingSetting::create(['id' => 1, 'base_fee' => 10, 'price_per_km' => 1.5,
+            'minimum_fee' => 10, 'maximum_distance_km' => 50, 'auto_pricing_enabled' => true,
+            'emirate_pricing_enabled' => true, 'emirate_rates' => ['dubai' => ['dubai' => '22.00']]]);
+        $this->send($key)->assertCreated()->assertJsonPath('data.status', 'priced')
+            ->assertJsonPath('data.requires_price_approval', true);
+        $delivery = Delivery::sole();
+        $this->assertEquals(22, $delivery->delivery_fee);
+        $this->assertSame(DeliveryStatus::Priced, $delivery->status);
+        $this->assertDatabaseCount('integration_delivery_orders', 1);
+        $this->assertDatabaseCount('integration_delivery_webhooks', 2);
+        $this->send($key)->assertOk();
+        $this->assertDatabaseCount('deliveries', 1);
+    }
 }

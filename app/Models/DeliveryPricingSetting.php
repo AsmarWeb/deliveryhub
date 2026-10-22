@@ -12,6 +12,8 @@ class DeliveryPricingSetting extends Model
         'minimum_fee',
         'maximum_distance_km',
         'auto_pricing_enabled',
+        'emirate_pricing_enabled',
+        'emirate_rates',
     ];
 
     protected function casts(): array
@@ -22,6 +24,8 @@ class DeliveryPricingSetting extends Model
             'minimum_fee' => 'decimal:2',
             'maximum_distance_km' => 'decimal:2',
             'auto_pricing_enabled' => 'boolean',
+            'emirate_pricing_enabled' => 'boolean',
+            'emirate_rates' => 'array',
         ];
     }
 }

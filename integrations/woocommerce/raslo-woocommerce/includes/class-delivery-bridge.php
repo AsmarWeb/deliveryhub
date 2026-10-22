@@ -171,7 +171,9 @@ class DeliveryBridge
             throw new \RuntimeException('NO_PHYSICAL_ITEMS');
         }
         $states = ['AZ' => 'abu_dhabi', 'DU' => 'dubai', 'SH' => 'sharjah', 'AJ' => 'ajman', 'UQ' => 'umm_al_quwain', 'RK' => 'ras_al_khaimah', 'FU' => 'fujairah'];
-        $emirate = $states[$order->get_shipping_state()] ?? null;
+        $emirate = $states[strtoupper(trim((string) $order->get_shipping_state()))]
+            ?? (in_array(strtolower(trim((string) $order->get_shipping_state())), array_values($states), true)
+                ? strtolower(trim((string) $order->get_shipping_state())) : null);
         if (! $emirate) {
             throw new \RuntimeException('EMIRATE_REQUIRED');
         }

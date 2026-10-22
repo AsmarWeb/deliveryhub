@@ -4,7 +4,7 @@
 
 Raslo connects businesses with delivery partners to manage pricing, assignments, pickup, tracking, and proof of delivery. Previously named DeliveryHub, the project is built with Laravel and an API-first architecture, with a companion Expo application for merchants and drivers.
 
-> Active development. Existing delivery workflows are implemented; store integrations described below are planned. Test coverage and a working development build do not constitute production certification.
+> Active development. Delivery operations and Enterprise catalog integration are implemented; native store plugins and delivery checkout integrations remain planned. Test coverage and a working development build do not constitute production certification.
 
 ## What exists today
 
@@ -19,7 +19,11 @@ Raslo connects businesses with delivery partners to manage pricing, assignments,
 
 The companion app has been tested on an Android development build with a real push notification. Other workflows and production credentials must be validated in their deployment environment.
 
-## E-commerce direction
+## Enterprise catalog
+
+Paid Enterprise merchants can connect stores, synchronize products using a shared Push API or compatible HTTPS feed, and publish approved products to web and mobile discovery. Initial feed import starts on connection creation and repeats every 15 minutes. Native Shopify/WooCommerce adapters are not included. [Setup and API contract](docs/enterprise-catalog.md).
+
+## E-commerce delivery direction
 
 The store continues to own its products, checkout, and payment. Raslo will provide the delivery option:
 
@@ -38,7 +42,7 @@ The store continues to own its products, checkout, and payment. Raslo will provi
 | Delivery operations | Implemented; validation continues | Pricing, assignments, pickup, tracking, delivery proof, COD |
 | Merchant and driver app | Development build | Account flows, delivery operations, in-app and phone notifications |
 | Automation and subscriptions | Implemented; validation continues | Recurring deliveries, dispatch, Stripe billing |
-| Integration foundation | Next | Store connections, scoped credentials, merchant isolation, idempotency, event logs |
+| Enterprise catalog integration | Implemented | Store keys, paid entitlement, push/feed product sync, run history, publication review, web/mobile discovery |
 | Delivery integration API | Planned | Serviceability and quotes, booking, tracking, signed outgoing webhooks, sandbox |
 | Store connectors | Planned | Shopify, WooCommerce, and custom stores using the shared integration layer |
 | Production pilot | Planned | End-to-end merchant trials, failure recovery, monitoring, deployment hardening |
@@ -77,8 +81,10 @@ Inspect GitHub Actions for the current CI result. Earlier local results are not 
 
 ## API and operations
 
-Application endpoints currently use `/api/v1` with Sanctum authentication and resource authorization. These are application APIs; a dedicated, scoped store integration contract is the next milestone.
+Application endpoints currently use `/api/v1` with Sanctum authentication and resource authorization. These are application APIs; a dedicated catalog integration API is available under `/api/integrations/v1`; store delivery quote/booking integration remains planned.
 
+- [Enterprise catalog integration](docs/enterprise-catalog.md)
+- [Catalog OpenAPI](docs/catalog-openapi.json)
 - [API notes](docs/api.md)
 - [Database notes](docs/database.md)
 - [Architecture notes](docs/architecture.md)

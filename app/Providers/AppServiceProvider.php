@@ -2,13 +2,14 @@
 
 namespace App\Providers;
 
-use Laravel\Cashier\Cashier;
-use App\Models\Merchant;
-
-use Laravel\Cashier\Events\WebhookHandled;
 use App\Listeners\SyncStripeMerchantSubscription;
+use App\Models\Merchant;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Cashier\Cashier;
+use Laravel\Cashier\Events\WebhookHandled;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,9 +27,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Cashier::useCustomerModel(Merchant::class);
+        RateLimiter::for('catalog-key', fn ($request) => Limit::perMinute(60)->by('catalog:'.$request->attributes->get('catalog_connection')?->id)
+        );
         foreach (['billing-read' => 60, 'billing-write' => 5] as $name => $limit) {
-            \Illuminate\Support\Facades\RateLimiter::for($name, fn ($request) =>
-                \Illuminate\Cache\RateLimiting\Limit::perMinute($limit)->by((string) $request->user()?->id)
+            RateLimiter::for($name, fn ($request) => Limit::perMinute($limit)->by((string) $request->user()?->id)
             );
         }
         Event::listen(WebhookHandled::class, SyncStripeMerchantSubscription::class);

@@ -2,6 +2,7 @@
 
 namespace App\Services\Billing;
 
+use App\Models\Merchant;
 use App\Models\MerchantSubscription;
 use App\Models\SubscriptionPlan;
 use Illuminate\Support\Carbon;
@@ -26,9 +27,12 @@ class StripeSubscriptionSyncService
         }
 
         $prices = [];
-        foreach (['growth', 'business'] as $slug) {
-            $price = config('services.stripe.prices.' . $slug);
+        foreach (['growth', 'business', 'enterprise'] as $slug) {
+            $price = config('services.stripe.prices.'.$slug);
             if (is_string($price) && str_starts_with($price, 'price_')) {
+                if (isset($prices[$price])) {
+                    throw new \RuntimeException('Stripe plan prices must be distinct.');
+                }
                 $prices[$price] = $slug;
             }
         }
@@ -76,6 +80,7 @@ class StripeSubscriptionSyncService
             if ($remotePrice !== $subscription->stripe_price) {
                 throw new \RuntimeException('Subscription price update pending; retry paid invoice.');
             }
+
             return;
         }
         [$periodStart, $periodEnd] = $period;
@@ -92,7 +97,7 @@ class StripeSubscriptionSyncService
         ) {
             $merchantId = $subscription->owner->id;
             // Serialize concurrent invoices across subscriptions for one merchant.
-            \App\Models\Merchant::query()->whereKey($merchantId)->lockForUpdate()->firstOrFail();
+            Merchant::query()->whereKey($merchantId)->lockForUpdate()->firstOrFail();
 
             if (MerchantSubscription::where('merchant_id', $merchantId)
                 ->where('status', 'active')->where('starts_at', '>', $periodStart)->exists()) {

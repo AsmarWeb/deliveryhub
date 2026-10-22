@@ -57,6 +57,7 @@ html[dir="rtl"] body{font-family:Tahoma,Arial,sans-serif}.nav{height:auto;min-he
 </style>
 </head>
 <body>
+<div style="text-align:center;padding:12px;background:#10223b;color:white"><a style="color:white" href="{{ route('catalog.index') }}">تصفح منتجات المتاجر · Browse products →</a></div>
 @php
  $t = fn($ar,$en) => $isAr ? $ar : $en;
  $emirates = ['abu_dhabi'=>'أبوظبي','dubai'=>'دبي','sharjah'=>'الشارقة','ajman'=>'عجمان','umm_al_quwain'=>'أم القيوين','ras_al_khaimah'=>'رأس الخيمة','fujairah'=>'الفجيرة'];

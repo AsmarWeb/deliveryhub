@@ -52,6 +52,13 @@
                     <a href="{{ route('web.dashboard') }}" class="font-medium transition hover:text-blue-400">
                         Raslo
                     </a>
+                        @if(auth()->user()?->hasRole('merchant'))
+                            <a href="{{ route('merchant.catalog.index') }}" style="margin-inline-start:12px;font-size:13px">تكاملات Enterprise</a>
+                        @endif
+                        @if(auth()->user()?->hasRole('admin'))
+                            <a href="{{ route('admin.catalog.index') }}" style="margin-inline-start:12px;font-size:13px">مراجعة المتاجر</a>
+                        @endif
+
 
                     <span aria-hidden="true">/</span>
 

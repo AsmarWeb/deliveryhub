@@ -3,17 +3,21 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\Billing\StripeWebhookController;
-use App\Models\Merchant;
 use App\Models\MerchantSubscription;
+use App\Models\Role;
+use App\Models\SubscriptionPlan;
 use App\Services\Billing\MerchantSubscriptionAccess;
 use App\Services\Billing\StripeInvoicePeriod;
+use App\Services\Billing\StripePlanPrice;
+use App\Services\Billing\StripeSubscriptionState;
+use App\Services\Catalog\EnterpriseCatalogAccess;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\CreatesRecurringDeliveries;
 use Tests\TestCase;
 
 class StripeBillingFlowTest extends TestCase
 {
-    use RefreshDatabase, CreatesRecurringDeliveries;
+    use CreatesRecurringDeliveries, RefreshDatabase;
 
     protected function setUp(): void
     {
@@ -26,6 +30,7 @@ class StripeBillingFlowTest extends TestCase
         $payload = json_encode($event);
         $timestamp = time();
         $signature = hash_hmac('sha256', $timestamp.'.'.$payload, 'whsec_test');
+
         return $this->call('POST', '/stripe/webhook', [], [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_STRIPE_SIGNATURE' => 't='.$timestamp.',v1='.$signature,
@@ -53,6 +58,7 @@ class StripeBillingFlowTest extends TestCase
         $schedule->merchant->forceFill(['stripe_id' => 'cus_test'])->save();
         $subscription = $this->subscribe($schedule->merchant);
         $subscription->plan->update(['slug' => 'growth']);
+
         return $subscription->fresh(['merchant', 'cashierSubscription', 'plan']);
     }
 
@@ -144,6 +150,7 @@ class StripeBillingFlowTest extends TestCase
         }
         $this->assertDatabaseCount('merchant_subscriptions', 0);
     }
+
     public function test_legacy_invoice_fields_are_supported(): void
     {
         $subscription = $this->paidSubscription();
@@ -162,7 +169,7 @@ class StripeBillingFlowTest extends TestCase
         $subscription = $this->paidSubscription();
         $price = ['active' => true, 'currency' => 'aed', 'unit_amount' => 9900,
             'recurring' => ['interval' => 'month', 'interval_count' => 1]];
-        $validator = app(\App\Services\Billing\StripePlanPrice::class);
+        $validator = app(StripePlanPrice::class);
         $this->assertTrue($validator->matches($subscription->plan, $price));
         foreach ([['currency' => 'usd'], ['unit_amount' => 990], ['active' => false],
             ['recurring' => ['interval' => 'year', 'interval_count' => 1]]] as $invalid) {
@@ -173,7 +180,7 @@ class StripeBillingFlowTest extends TestCase
     public function test_current_api_reports_confirmed_access_and_allows_return_refreshes(): void
     {
         $subscription = $this->paidSubscription();
-        \App\Models\Role::firstOrCreate(['name' => 'merchant'], ['display_name' => 'Merchant']);
+        Role::firstOrCreate(['name' => 'merchant'], ['display_name' => 'Merchant']);
         $subscription->merchant->user->addRole('merchant');
         $this->actingAs($subscription->merchant->user, 'sanctum');
         for ($i = 0; $i < 8; $i++) {
@@ -201,11 +208,11 @@ class StripeBillingFlowTest extends TestCase
     {
         $subscription = $this->paidSubscription();
         config(['services.stripe.prices.business' => 'price_business']);
-        \App\Models\SubscriptionPlan::create([
+        SubscriptionPlan::create([
             'slug' => 'business', 'name' => 'Business', 'monthly_price' => 299,
             'currency' => 'AED', 'commission_rate' => 7, 'max_active_automations' => 20, 'is_active' => true,
         ]);
-        $this->mock(\App\Services\Billing\StripeSubscriptionState::class)
+        $this->mock(StripeSubscriptionState::class)
             ->shouldReceive('currentPrice')->once()->andReturn('price_business');
         $invoice = $this->invoice($subscription, ['lines' => ['data' => [[
             'pricing' => ['price_details' => ['price' => 'price_business']],
@@ -217,4 +224,15 @@ class StripeBillingFlowTest extends TestCase
         $this->assertSame('business', $subscription->fresh()->plan->slug);
     }
 
+    public function test_signed_paid_invoice_can_activate_the_enterprise_plan(): void
+    {
+        $subscription = $this->paidSubscription();
+        $subscription->plan->update(['slug' => 'enterprise', 'monthly_price' => '999.00']);
+        config(['services.stripe.prices.growth' => 'price_growth', 'services.stripe.prices.enterprise' => 'price_test']);
+        $invoice = $this->invoice($subscription);
+        $invoice['lines']['data'][0]['amount'] = 99900;
+        $subscription->delete();
+        $this->postEvent(['id' => 'evt_enterprise_paid', 'type' => 'invoice.paid', 'data' => ['object' => $invoice]])->assertOk();
+        $this->assertTrue(app(EnterpriseCatalogAccess::class)->allows($subscription->merchant));
+    }
 }

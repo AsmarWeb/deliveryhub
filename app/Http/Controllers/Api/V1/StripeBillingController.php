@@ -4,7 +4,11 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Merchant;
+use App\Models\RecurringDelivery;
 use App\Models\SubscriptionPlan;
+use App\Services\Billing\MerchantSubscriptionAccess;
+use App\Services\Billing\StripePlanPrice;
+use App\Services\Catalog\EnterpriseCatalogAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -15,7 +19,7 @@ class StripeBillingController extends Controller
     public function checkout(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'plan' => ['required', 'string', 'in:growth,business'],
+            'plan' => ['required', 'string', 'in:growth,business,enterprise'],
         ]);
 
         $merchant = Merchant::query()
@@ -39,13 +43,13 @@ class StripeBillingController extends Controller
             ->where('is_active', true)
             ->first();
 
-        if (! $plan) {
+        if (! $plan || ($plan->slug === 'enterprise' && (float) $plan->monthly_price <= 0)) {
             return response()->json([
                 'message' => 'Subscription plan is unavailable.',
             ], 404);
         }
 
-        $priceId = config('services.stripe.prices.' . $plan->slug);
+        $priceId = config('services.stripe.prices.'.$plan->slug);
 
         if (! is_string($priceId) || ! str_starts_with($priceId, 'price_')) {
             return response()->json([
@@ -54,6 +58,11 @@ class StripeBillingController extends Controller
         }
 
         if (config('services.stripe.prices.growth') === config('services.stripe.prices.business')) {
+            return response()->json(['message' => 'Stripe plan prices must be distinct.'], 503);
+        }
+
+        $configuredPrices = array_filter(config('services.stripe.prices', []));
+        if (count($configuredPrices) !== count(array_unique($configuredPrices))) {
             return response()->json(['message' => 'Stripe plan prices must be distinct.'], 503);
         }
 
@@ -70,15 +79,15 @@ class StripeBillingController extends Controller
         }
 
         try {
-            if (! app(\App\Services\Billing\StripePlanPrice::class)->verify($plan, $priceId)) {
+            if (! app(StripePlanPrice::class)->verify($plan, $priceId)) {
                 return response()->json(['message' => 'Stripe price does not match the monthly plan.'], 503);
             }
 
             $checkout = $merchant
                 ->newSubscription('default', $priceId)
                 ->checkout([
-                    'success_url' => config('app.url') . '/billing/success?session_id={CHECKOUT_SESSION_ID}',
-                    'cancel_url' => config('app.url') . '/billing/cancel',
+                    'success_url' => config('app.url').'/billing/success?session_id={CHECKOUT_SESSION_ID}',
+                    'cancel_url' => config('app.url').'/billing/cancel',
                 ]);
 
             return response()->json([
@@ -97,9 +106,9 @@ class StripeBillingController extends Controller
         }
     }
 
-    public function plans(\Illuminate\Http\Request $request)
+    public function plans(Request $request)
     {
-        $plans = \App\Models\SubscriptionPlan::query()
+        $plans = SubscriptionPlan::query()
             ->where('is_active', true)
             ->orderBy('monthly_price')
             ->get([
@@ -118,9 +127,9 @@ class StripeBillingController extends Controller
         ]);
     }
 
-    public function current(\Illuminate\Http\Request $request)
+    public function current(Request $request)
     {
-        $merchant = \App\Models\Merchant::query()
+        $merchant = Merchant::query()
             ->where('user_id', $request->user()->id)
             ->first();
 
@@ -130,7 +139,7 @@ class StripeBillingController extends Controller
             ], 403);
         }
 
-        $access = app(\App\Services\Billing\MerchantSubscriptionAccess::class);
+        $access = app(MerchantSubscriptionAccess::class);
         $subscription = $access->current($merchant)
             ?? $merchant->merchantSubscriptions()->with(['plan', 'cashierSubscription'])->latest('id')->first();
 
@@ -139,10 +148,11 @@ class StripeBillingController extends Controller
                 'id' => $subscription->id,
                 'status' => $subscription->status,
                 'has_access' => $access->allows($subscription),
+                'can_use_catalog_api' => app(EnterpriseCatalogAccess::class)->allows($merchant),
                 'can_use_automations' => $access->allows($subscription, true)
                     && $subscription->plan?->max_active_automations > 0,
                 'stripe_status' => $subscription->cashierSubscription?->stripe_status,
-                'automation_usage' => \App\Models\RecurringDelivery::where('merchant_id', $merchant->id)->where('is_active', true)->count(),
+                'automation_usage' => RecurringDelivery::where('merchant_id', $merchant->id)->where('is_active', true)->count(),
                 'starts_at' => $subscription->starts_at,
                 'ends_at' => $subscription->ends_at,
                 'plan' => $subscription->plan,
@@ -153,10 +163,9 @@ class StripeBillingController extends Controller
         ]);
     }
 
-
-    public function portal(\Illuminate\Http\Request $request)
+    public function portal(Request $request)
     {
-        $merchant = \App\Models\Merchant::query()
+        $merchant = Merchant::query()
             ->where('user_id', $request->user()->id)
             ->firstOrFail();
 
@@ -174,7 +183,7 @@ class StripeBillingController extends Controller
             return response()->json([
                 'portal_url' => $session,
             ]);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             report($e);
 
             return response()->json([
@@ -182,5 +191,4 @@ class StripeBillingController extends Controller
             ], 503);
         }
     }
-
 }

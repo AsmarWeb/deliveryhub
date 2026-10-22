@@ -1,43 +1,51 @@
 <?php
 
-use App\Http\Controllers\Api\V1\Auth\AuthController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\V1\StripeBillingController;
-use App\Http\Controllers\Api\V1\MerchantAddressController;
-use App\Http\Controllers\Api\V1\DashboardController;
-use App\Http\Controllers\Api\V1\NotificationController;
-use App\Http\Controllers\Api\V1\DeliveryTrackingController;
-use App\Http\Controllers\Api\V1\ProofOfDeliveryViewController;
-use App\Http\Controllers\Api\V1\ProofOfDeliveryController;
-use App\Http\Controllers\Api\V1\DeliveryCompletionController;
-use App\Http\Controllers\Api\V1\DriverDeliveryController;
-use App\Http\Controllers\Api\V1\DriverAssignmentController;
-use App\Http\Controllers\Api\V1\DeliveryAssignmentController;
-use App\Http\Controllers\Api\V1\DeliveryTransitionController;
-use App\Http\Controllers\Api\V1\DeliveryPricingController;
-use App\Http\Controllers\Api\V1\DeliveryController;
-use App\Http\Controllers\Api\V1\DriverProfileController;
-use App\Http\Controllers\Api\V1\DriverLocationController;
-use App\Http\Controllers\Api\V1\MerchantDeliveryPriceApprovalController;
-use App\Http\Controllers\Api\V1\Auth\SelfRegistrationController;
+use App\Http\Controllers\Api\V1\Auth\AccountProfileController;
 use App\Http\Controllers\Api\V1\Auth\ApplicationStatusController;
+use App\Http\Controllers\Api\V1\Auth\AuthController;
+use App\Http\Controllers\Api\V1\Auth\SelfRegistrationController;
+use App\Http\Controllers\Api\V1\AvailableDriversController;
+use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\DeliveryAssignmentController;
+use App\Http\Controllers\Api\V1\DeliveryCodController;
+use App\Http\Controllers\Api\V1\DeliveryCompletionController;
+use App\Http\Controllers\Api\V1\DeliveryController;
+use App\Http\Controllers\Api\V1\DeliveryPricingController;
+use App\Http\Controllers\Api\V1\DeliveryTrackingController;
+use App\Http\Controllers\Api\V1\DeliveryTransitionController;
+use App\Http\Controllers\Api\V1\DispatchPresenceController;
+use App\Http\Controllers\Api\V1\DriverAssignmentController;
+use App\Http\Controllers\Api\V1\DriverDeliveryController;
+use App\Http\Controllers\Api\V1\DriverLocationController;
+use App\Http\Controllers\Api\V1\DriverProfileController;
+use App\Http\Controllers\Api\V1\MerchantAddressController;
+use App\Http\Controllers\Api\V1\MerchantDeliveryCancellationController;
+use App\Http\Controllers\Api\V1\MerchantDeliveryPriceApprovalController;
+use App\Http\Controllers\Api\V1\MerchantFinanceController;
+use App\Http\Controllers\Api\V1\NotificationController;
+use App\Http\Controllers\Api\V1\ProofOfDeliveryController;
+use App\Http\Controllers\Api\V1\ProofOfDeliveryViewController;
+use App\Http\Controllers\Api\V1\PushDeviceController;
+use App\Http\Controllers\Api\V1\RecurringDeliveryController;
+use App\Http\Controllers\Api\V1\StripeBillingController;
+use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
-    Route::post('/driver/dispatch-presence', \App\Http\Controllers\Api\V1\DispatchPresenceController::class)
+    Route::post('/driver/dispatch-presence', DispatchPresenceController::class)
         ->middleware(['auth:sanctum', 'account.active', 'throttle:10,1']);
-    Route::get('/merchant/available-drivers', \App\Http\Controllers\Api\V1\AvailableDriversController::class)
+    Route::get('/merchant/available-drivers', AvailableDriversController::class)
         ->middleware(['auth:sanctum', 'account.active', 'throttle:60,1']);
 
     Route::middleware(['auth:sanctum', 'account.active', 'throttle:60,1'])->group(function () {
-        Route::get('/deliveries/{delivery}/cod', [\App\Http\Controllers\Api\V1\DeliveryCodController::class, 'show'])->whereNumber('delivery');
-        Route::post('/deliveries/{delivery}/cod/collect', [\App\Http\Controllers\Api\V1\DeliveryCodController::class, 'collect'])->whereNumber('delivery');
-        Route::post('/deliveries/{delivery}/cod/receive', [\App\Http\Controllers\Api\V1\DeliveryCodController::class, 'receive'])->whereNumber('delivery');
+        Route::get('/deliveries/{delivery}/cod', [DeliveryCodController::class, 'show'])->whereNumber('delivery');
+        Route::post('/deliveries/{delivery}/cod/collect', [DeliveryCodController::class, 'collect'])->whereNumber('delivery');
+        Route::post('/deliveries/{delivery}/cod/receive', [DeliveryCodController::class, 'receive'])->whereNumber('delivery');
     });
 
-    Route::post('/deliveries/{delivery}/cancel', \App\Http\Controllers\Api\V1\MerchantDeliveryCancellationController::class)
+    Route::post('/deliveries/{delivery}/cancel', MerchantDeliveryCancellationController::class)
         ->whereNumber('delivery')->middleware(['auth:sanctum', 'account.active', 'throttle:10,1']);
 
-    Route::get('/merchant/finance', \App\Http\Controllers\Api\V1\MerchantFinanceController::class)
+    Route::get('/merchant/finance', MerchantFinanceController::class)
         ->middleware(['auth:sanctum', 'account.active', 'throttle:60,1']);
 
     Route::middleware([
@@ -54,7 +62,6 @@ Route::prefix('v1')->group(function () {
             'portal',
         ])->middleware('throttle:billing-write')->name('merchant.billing.portal');
 
-
         Route::get('/plans', [
             StripeBillingController::class,
             'plans',
@@ -65,9 +72,7 @@ Route::prefix('v1')->group(function () {
             'current',
         ])->middleware('throttle:billing-read')->name('merchant.billing.current');
 
-
     });
-
 
     Route::middleware([
         'auth:sanctum',
@@ -85,8 +90,8 @@ Route::prefix('v1')->group(function () {
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout']);
             Route::get('/me', [AuthController::class, 'me']);
-            Route::get('/account', [\App\Http\Controllers\Api\V1\Auth\AccountProfileController::class, 'show']);
-            Route::patch('/account', [\App\Http\Controllers\Api\V1\Auth\AccountProfileController::class, 'update'])->middleware('throttle:10,1');
+            Route::get('/account', [AccountProfileController::class, 'show']);
+            Route::patch('/account', [AccountProfileController::class, 'update'])->middleware('throttle:10,1');
         });
 
         Route::post('/register/merchant', [SelfRegistrationController::class, 'merchant'])->middleware('throttle:5,1');
@@ -97,7 +102,6 @@ Route::prefix('v1')->group(function () {
             ApplicationStatusController::class
         );
     });
-
 
     Route::middleware('auth:sanctum')
         ->prefix('deliveries')
@@ -125,7 +129,6 @@ Route::prefix('v1')->group(function () {
                 '/{delivery}/complete',
                 DeliveryCompletionController::class
             )->name('deliveries.complete');
-
 
             Route::get(
                 '/{delivery}/proof',
@@ -199,8 +202,8 @@ Route::prefix('v1')->group(function () {
         ->name('driver.deliveries.proof');
 
     Route::middleware(['auth:sanctum', 'account.active', 'throttle:20,1'])->group(function () {
-        Route::post('push/device', [\App\Http\Controllers\Api\V1\PushDeviceController::class, 'store']);
-        Route::delete('push/device', [\App\Http\Controllers\Api\V1\PushDeviceController::class, 'destroy']);
+        Route::post('push/device', [PushDeviceController::class, 'store']);
+        Route::delete('push/device', [PushDeviceController::class, 'destroy']);
     });
 
     Route::middleware('auth:sanctum')
@@ -208,24 +211,24 @@ Route::prefix('v1')->group(function () {
         ->group(function () {
             Route::get('/', [
                 NotificationController::class,
-                'index'
+                'index',
             ]);
 
             Route::get('/unread-count', [
                 NotificationController::class,
-                'unreadCount'
+                'unreadCount',
             ]);
 
             Route::get('/{id}', [NotificationController::class, 'show']);
 
             Route::patch('/{id}/read', [
                 NotificationController::class,
-                'markAsRead'
+                'markAsRead',
             ]);
 
             Route::post('/read-all', [
                 NotificationController::class,
-                'markAllAsRead'
+                'markAllAsRead',
             ]);
         });
 
@@ -243,7 +246,6 @@ Route::prefix('v1')->group(function () {
     });
 });
 
-
 // DELIVERYHUB MERCHANT AUTOMATION ROUTES
 Route::middleware([
     'auth:sanctum',
@@ -251,17 +253,19 @@ Route::middleware([
     'throttle:30,1',
 ])->prefix('v1/merchant/automations')->group(function () {
     Route::get('/', [
-        \App\Http\Controllers\Api\V1\RecurringDeliveryController::class,
+        RecurringDeliveryController::class,
         'index',
     ])->name('merchant.automations.index');
 
     Route::post('/', [
-        \App\Http\Controllers\Api\V1\RecurringDeliveryController::class,
+        RecurringDeliveryController::class,
         'store',
     ])->name('merchant.automations.store');
 
     Route::patch('/{recurringDelivery}/status', [
-        \App\Http\Controllers\Api\V1\RecurringDeliveryController::class,
+        RecurringDeliveryController::class,
         'updateStatus',
     ])->name('merchant.automations.status');
 });
+
+require __DIR__.'/catalog.php';

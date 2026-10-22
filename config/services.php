@@ -48,6 +48,7 @@ return [
         'prices' => [
             'growth' => env('STRIPE_PRICE_GROWTH'),
             'business' => env('STRIPE_PRICE_BUSINESS'),
+            'enterprise' => env('STRIPE_PRICE_ENTERPRISE'),
         ],
     ],
 

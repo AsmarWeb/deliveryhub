@@ -45,6 +45,10 @@ class SubscriptionPlanSeeder extends Seeder
         ];
 
         foreach ($plans as $plan) {
+            // Retain an operator-configured Enterprise contract price across re-seeding.
+            if ($plan['slug'] === 'enterprise' && SubscriptionPlan::where('slug', 'enterprise')->exists()) {
+                unset($plan['monthly_price']);
+            }
             SubscriptionPlan::updateOrCreate(
                 ['slug' => $plan['slug']],
                 array_merge($plan, [

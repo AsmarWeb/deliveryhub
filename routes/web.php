@@ -1,29 +1,30 @@
 <?php
 
-use App\Http\Controllers\Web\Admin\AdminMerchantSubscriptionController;
-
-use App\Http\Controllers\Web\Admin\AdminDeliveryController;
-use App\Http\Controllers\Web\Admin\AdminDeliveryCompletionController;
-use App\Http\Controllers\Web\Admin\AdminProofOfDeliveryController;
+use App\Http\Controllers\Auth\WebAuthController;
+use App\Http\Controllers\Billing\StripeWebhookController;
+use App\Http\Controllers\Catalog\CatalogDashboardController;
+use App\Http\Controllers\Catalog\PublicCatalogController;
 use App\Http\Controllers\Web\Admin\AdminDashboardController;
+use App\Http\Controllers\Web\Admin\AdminDeliveryCompletionController;
+use App\Http\Controllers\Web\Admin\AdminDeliveryController;
+use App\Http\Controllers\Web\Admin\AdminDeliveryDispatchController;
 use App\Http\Controllers\Web\Admin\AdminDriverController;
 use App\Http\Controllers\Web\Admin\AdminMerchantController;
-use App\Http\Controllers\Web\Admin\AdminDeliveryDispatchController;
+use App\Http\Controllers\Web\Admin\AdminMerchantSubscriptionController;
+use App\Http\Controllers\Web\Admin\AdminPricingSettingsController;
+use App\Http\Controllers\Web\Admin\AdminProofOfDeliveryController;
 use App\Http\Controllers\Web\Admin\MerchantCrmController;
-
-use App\Http\Controllers\Auth\WebAuthController;
 use App\Http\Controllers\Web\DashboardController;
-use App\Http\Controllers\Web\MerchantDeliveryController;
-use App\Http\Controllers\Web\MerchantDeliveryCreationController;
-use App\Http\Controllers\Web\MerchantAddressController;
 use App\Http\Controllers\Web\DriverAssignmentController;
 use App\Http\Controllers\Web\DriverDeliveryController;
 use App\Http\Controllers\Web\DriverProofOfDeliveryController;
+use App\Http\Controllers\Web\HomeController;
+use App\Http\Controllers\Web\MerchantAddressController;
+use App\Http\Controllers\Web\MerchantDeliveryController;
+use App\Http\Controllers\Web\MerchantDeliveryCreationController;
+use App\Http\Controllers\Web\MerchantLeadController;
 use App\Http\Controllers\Web\MerchantProofOfDeliveryController;
 use Illuminate\Support\Facades\Route;
-
-
-use App\Http\Controllers\Web\HomeController;
 
 Route::get('/language/{locale}', function (string $locale) {
     abort_unless(in_array($locale, ['ar', 'en'], true), 404);
@@ -38,15 +39,16 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 // Add these once:
 Route::get('/sitemap.xml', function () {
     $xml = '<?xml version="1.0" encoding="UTF-8"?>'
-        . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-        . '<url><loc>' . e(url('/')) . '</loc></url>'
-        . '<url><loc>' . e(url('/?lang=ar')) . '</loc></url>'
-        . '</urlset>';
+        .'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        .'<url><loc>'.e(url('/')).'</loc></url>'
+        .'<url><loc>'.e(url('/?lang=ar')).'</loc></url>'
+        .'</urlset>';
+
     return response($xml, 200)->header('Content-Type', 'application/xml; charset=UTF-8');
 })->name('sitemap');
 
 Route::get('/robots.txt', function () {
-    return response("User-agent: *\nAllow: /\nSitemap: " . url('/sitemap.xml') . "\n", 200)
+    return response("User-agent: *\nAllow: /\nSitemap: ".url('/sitemap.xml')."\n", 200)
         ->header('Content-Type', 'text/plain; charset=UTF-8');
 });
 
@@ -61,15 +63,14 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 Route::middleware('guest')->group(function () {
     Route::get('/login', [
         WebAuthController::class,
-        'showLogin'
+        'showLogin',
     ])->name('login');
 
     Route::post('/login', [
         WebAuthController::class,
-        'login'
+        'login',
     ])->name('login.store');
 });
-
 
 Route::get(
     '/admin/dashboard',
@@ -78,11 +79,10 @@ Route::get(
     ->middleware('auth')
     ->name('admin.dashboard');
 
-
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [
         WebAuthController::class,
-        'logout'
+        'logout',
     ])->name('logout');
 
     Route::get(
@@ -106,10 +106,9 @@ Route::middleware('auth')->group(function () {
     )->name('merchant.deliveries.store');
 
     Route::get('/merchant/deliveries/{delivery}', [
-        \App\Http\Controllers\Web\MerchantDeliveryController::class,
+        MerchantDeliveryController::class,
         'show',
     ])->name('merchant.deliveries.show');
-
 
     Route::prefix('merchant/addresses')
         ->name('merchant.addresses.')
@@ -125,7 +124,6 @@ Route::middleware('auth')->group(function () {
             Route::delete('/{address}', 'destroy')
                 ->whereNumber('address')->name('destroy');
         });
-
 
     Route::prefix('driver/assignments')
         ->name('driver.assignments.')
@@ -180,7 +178,6 @@ Route::middleware('auth')->group(function () {
         ->where('type', 'photo|signature')
         ->name('merchant.deliveries.proof.file');
 
-
     Route::prefix('admin')
         ->name('admin.')
         ->group(function () {
@@ -229,7 +226,6 @@ Route::middleware('auth')->group(function () {
             ])->whereNumber('merchant')
                 ->name('merchants.status');
 
-
             Route::post('/deliveries/{delivery}/price', [
                 AdminDeliveryDispatchController::class,
                 'price',
@@ -258,7 +254,6 @@ Route::middleware('auth')->group(function () {
             ])->name('drivers.locations');
         });
 
-
     Route::get(
         '/admin/deliveries/{delivery}/proof/{type}',
         [AdminProofOfDeliveryController::class, 'file']
@@ -268,12 +263,10 @@ Route::middleware('auth')->group(function () {
         ->name('admin.deliveries.proof.file');
 });
 
-
 // Public merchant registration
-Route::post('/merchant-leads', [\App\Http\Controllers\Web\MerchantLeadController::class, 'store'])
+Route::post('/merchant-leads', [MerchantLeadController::class, 'store'])
     ->middleware('throttle:10,1')
     ->name('merchant-leads.store');
-
 
 // Delivery pricing settings - administrators only.
 Route::middleware(['auth', 'role:admin'])
@@ -281,16 +274,15 @@ Route::middleware(['auth', 'role:admin'])
     ->name('admin.')
     ->group(function () {
         Route::get('/pricing', [
-            \App\Http\Controllers\Web\Admin\AdminPricingSettingsController::class,
+            AdminPricingSettingsController::class,
             'edit',
         ])->name('pricing.edit');
 
         Route::put('/pricing', [
-            \App\Http\Controllers\Web\Admin\AdminPricingSettingsController::class,
+            AdminPricingSettingsController::class,
             'update',
         ])->name('pricing.update');
     });
-
 
 // Merchant subscription administration
 Route::middleware(['auth', 'role:admin'])
@@ -305,14 +297,27 @@ Route::middleware(['auth', 'role:admin'])
     });
 
 // Override Cashier's webhook action while retaining its signature middleware.
-Route::post(config('cashier.path', 'stripe') . '/webhook', [
-    \App\Http\Controllers\Billing\StripeWebhookController::class, 'handleWebhook',
+Route::post(config('cashier.path', 'stripe').'/webhook', [
+    StripeWebhookController::class, 'handleWebhook',
 ])->name('cashier.webhook');
 
 foreach (['success', 'cancel', 'return'] as $billingOutcome) {
-    Route::get('/billing/' . $billingOutcome, function () use ($billingOutcome) {
+    Route::get('/billing/'.$billingOutcome, function () use ($billingOutcome) {
         return response()->view('billing.return', ['outcome' => $billingOutcome])
             ->header('Cache-Control', 'no-store')
             ->header('Referrer-Policy', 'no-referrer');
-    })->name('billing.' . $billingOutcome);
+    })->name('billing.'.$billingOutcome);
 }
+
+Route::get('/catalog', [PublicCatalogController::class, 'web'])->middleware('throttle:60,1')->name('catalog.index');
+Route::middleware(['auth', 'account.active', 'throttle:20,1'])->prefix('merchant/integrations')->name('merchant.catalog.')->controller(CatalogDashboardController::class)->group(function () {
+    Route::get('/', 'index')->name('index');
+    Route::post('/', 'store')->name('store');
+    Route::post('/{connection}/rotate-key', 'rotate')->whereNumber('connection')->name('rotate');
+    Route::post('/{connection}/status', 'update')->whereNumber('connection')->name('status');
+    Route::post('/{connection}/sync', 'sync')->whereNumber('connection')->name('sync');
+});
+Route::middleware(['auth', 'role:admin'])->prefix('admin/catalog')->name('admin.catalog.')->controller(CatalogDashboardController::class)->group(function () {
+    Route::get('/', 'admin')->name('index');
+    Route::post('/{connection}/approval', 'approve')->whereNumber('connection')->name('approval');
+});

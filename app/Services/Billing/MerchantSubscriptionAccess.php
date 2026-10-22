@@ -29,7 +29,7 @@ class MerchantSubscriptionAccess
     public function current(Merchant $merchant, bool $requireStripe = false): ?MerchantSubscription
     {
         return $merchant->merchantSubscriptions()->with(['plan', 'cashierSubscription'])
-            ->where('status', 'active')->latest('starts_at')->get()
+            ->where('status', 'active')->latest('starts_at')->latest('id')->get()
             ->first(fn ($subscription) => $this->allows($subscription, $requireStripe));
     }
 }

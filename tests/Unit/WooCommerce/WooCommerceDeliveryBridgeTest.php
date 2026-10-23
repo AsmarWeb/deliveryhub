@@ -220,4 +220,48 @@ class WooCommerceDeliveryBridgeTest extends TestCase
         $shipping->calculate_shipping(['destination' => ['country' => 'AE']]);
         $this->assertCount(1, $shipping->rates);
     }
+
+    public function test_classic_checkout_validates_selected_address_without_payment_or_network(): void
+    {
+        $bridge = new DeliveryBridge;
+        $errors = new class
+        {
+            public array $codes = [];
+
+            public function add($code, $message): void
+            {
+                $this->codes[] = $code;
+            }
+        };
+        $data = ['shipping_method' => ['raslo:1'], 'billing_state' => 'DU', 'billing_phone' => '0501234567',
+            'billing_first_name' => 'Test', 'billing_last_name' => 'Customer', 'billing_city' => 'Dubai',
+            'billing_address_1' => 'Building 10', 'billing_address_2' => 'Apartment 2'];
+        $bridge->validateCheckout($data, $errors);
+        $this->assertSame([], $errors->codes);
+        foreach (['billing_state' => 'emirate', 'billing_phone' => 'phone', 'billing_address_1' => 'address'] as $field => $expected) {
+            $errors->codes = [];
+            $invalid = array_replace($data, [$field => '', 'billing_address_2' => '']);
+            $bridge->validateCheckout($invalid, $errors);
+            $this->assertSame(['raslo_'.$expected.'_required'], $errors->codes);
+        }
+        $errors->codes = [];
+        $bridge->validateCheckout(array_replace($data, ['ship_to_different_address' => true]), $errors);
+        $this->assertSame(['raslo_emirate_required'], $errors->codes);
+        $errors->codes = [];
+        $bridge->validateCheckout(['shipping_method' => ['flat_rate:1']], $errors);
+        $this->assertSame([], $errors->codes);
+    }
+
+    public function test_terminal_recipient_error_never_schedules_a_blind_retry_or_sends_http(): void
+    {
+        $GLOBALS['wc_orders'][101]->values = ['get_shipping_state' => ''];
+        $GLOBALS['wp_http'] = function () {
+            $this->fail('Invalid recipient must not reach the API');
+        };
+        (new DeliveryBridge)->send(101);
+        $this->assertSame('EMIRATE_REQUIRED', $GLOBALS['wc_orders'][101]->get_meta('_raslo_error'));
+        $this->assertSame(12, $GLOBALS['wc_orders'][101]->get_meta('_raslo_attempts'));
+        $this->assertSame([], $GLOBALS['wp_scheduled']);
+        $this->assertStringContainsString('emirate', DeliveryBridge::errorHelp('EMIRATE_REQUIRED'));
+    }
 }

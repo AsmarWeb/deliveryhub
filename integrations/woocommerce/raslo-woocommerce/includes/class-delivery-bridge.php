@@ -72,6 +72,7 @@ class DeliveryBridge
 
             return self::gatewaysForShipping($gateways, (array) $chosen);
         });
+        add_action('woocommerce_after_checkout_validation', [$this, 'validateCheckout'], 10, 2);
         add_action('woocommerce_payment_complete', [$this, 'changed']);
         add_action('woocommerce_order_status_processing', [$this, 'changed']);
         add_action('woocommerce_order_status_completed', [$this, 'changed']);
@@ -170,14 +171,28 @@ class DeliveryBridge
         if (! $physical) {
             throw new \RuntimeException('NO_PHYSICAL_ITEMS');
         }
+        $recipient = self::recipient([
+            'state' => $order->get_shipping_state(), 'phone' => $order->get_shipping_phone() ?: $order->get_billing_phone(),
+            'address_1' => $order->get_shipping_address_1(), 'address_2' => $order->get_shipping_address_2(),
+            'first_name' => $order->get_shipping_first_name(), 'last_name' => $order->get_shipping_last_name(), 'city' => $order->get_shipping_city(),
+        ]);
+
+        return ['external_order_id' => 'wc:'.$order->get_id(), 'currency' => 'AED', 'payment_status' => 'paid',
+            'recipient' => $recipient,
+            'package_description' => ProductMapper::text(implode(', ', $physical), 200),
+            'instructions' => ProductMapper::text($order->get_customer_note(), 1000)];
+    }
+
+    public static function recipient(array $data): array
+    {
         $states = ['AZ' => 'abu_dhabi', 'DU' => 'dubai', 'SH' => 'sharjah', 'AJ' => 'ajman', 'UQ' => 'umm_al_quwain', 'RK' => 'ras_al_khaimah', 'FU' => 'fujairah'];
-        $emirate = $states[strtoupper(trim((string) $order->get_shipping_state()))]
-            ?? (in_array(strtolower(trim((string) $order->get_shipping_state())), array_values($states), true)
-                ? strtolower(trim((string) $order->get_shipping_state())) : null);
+        $emirate = $states[strtoupper(trim((string) $data['state']))]
+            ?? (in_array(strtolower(trim((string) $data['state'])), array_values($states), true)
+                ? strtolower(trim((string) $data['state'])) : null);
         if (! $emirate) {
             throw new \RuntimeException('EMIRATE_REQUIRED');
         }
-        $phone = trim($order->get_shipping_phone() ?: $order->get_billing_phone());
+        $phone = trim($data['phone']);
         $phone = strtr($phone, ['٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4', '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9']);
         $phone = preg_replace('/[\s()\-]/', '', $phone);
         if (str_starts_with($phone, '00')) {
@@ -190,18 +205,56 @@ class DeliveryBridge
         if (! preg_match('/^\+[1-9][0-9]{7,14}$/', $phone)) {
             throw new \RuntimeException('PHONE_REQUIRED');
         }
-        $line = trim($order->get_shipping_address_1().' '.$order->get_shipping_address_2());
-        $name = trim($order->get_shipping_first_name().' '.$order->get_shipping_last_name());
-        $city = trim($order->get_shipping_city());
+        $line = trim($data['address_1'].' '.$data['address_2']);
+        $name = trim($data['first_name'].' '.$data['last_name']);
+        $city = trim($data['city']);
         if (mb_strlen($line) < 5 || ! $name || ! $city) {
             throw new \RuntimeException('ADDRESS_REQUIRED');
         }
 
-        return ['external_order_id' => 'wc:'.$order->get_id(), 'currency' => 'AED', 'payment_status' => 'paid',
-            'recipient' => ['contact_name' => ProductMapper::text($name, 200), 'contact_phone' => $phone, 'city' => ProductMapper::text($city, 120),
-                'emirate' => $emirate, 'address_line' => ProductMapper::text($line, 1000)],
-            'package_description' => ProductMapper::text(implode(', ', $physical), 200),
-            'instructions' => ProductMapper::text($order->get_customer_note(), 1000)];
+        return ['contact_name' => ProductMapper::text($name, 200), 'contact_phone' => $phone,
+            'city' => ProductMapper::text($city, 120), 'emirate' => $emirate, 'address_line' => ProductMapper::text($line, 1000)];
+    }
+
+    public static function errorHelp(string $code): string
+    {
+        return match ($code) {
+            'EMIRATE_REQUIRED' => 'اختر إمارة التسليم الصحيحة في عنوان الشحن. Select a valid UAE shipping emirate.',
+            'PHONE_REQUIRED' => 'أدخل هاتف المستلم بصيغة دولية أو رقم إماراتي صحيح. Add a valid recipient phone; shipping phone falls back to billing phone.',
+            'ADDRESS_REQUIRED' => 'أكمل اسم المستلم والمدينة والعنوان التفصيلي. Complete recipient name, city and full shipping address.',
+            'HTTP_401', 'HTTP_403' => 'راجع مفتاح التوصيل وتفعيل الربط واشتراك Enterprise. Check delivery credentials, enabled connection and paid Enterprise access.',
+            'HTTP_409' => 'تعارض مرجع الطلب؛ راجع رسلو قبل إعادة الإرسال ولا تغير المفتاح لتجاوز التعارض. Review the existing order in Raslo; do not change its key to bypass a conflict.',
+            'HTTP_400', 'HTTP_422' => 'راجع بيانات الطلب وعنوان استلام المتجر. Review order details and the configured pickup address.',
+            'NETWORK_ERROR', 'INVALID_RESPONSE' => 'تعذر تأكيد الاستجابة؛ احتفظ ببيانات الطلب ومفتاحه لإعادة المحاولة. Response not confirmed; retries must retain the original payload and key.',
+            default => 'راجع أهلية الطلب وإعدادات الربط وسجل المهام. Review order eligibility, integration settings and scheduled actions.',
+        };
+    }
+
+    public function validateCheckout(array $data, $errors): void
+    {
+        if (! self::enabled()) {
+            return;
+        }
+        $raslo = false;
+        foreach ((array) ($data['shipping_method'] ?? []) as $method) {
+            if (is_string($method) && ($method === 'raslo' || str_starts_with($method, 'raslo:'))) {
+                $raslo = true;
+            }
+        }
+        if (! $raslo) {
+            return;
+        }
+        $prefix = ! empty($data['ship_to_different_address']) ? 'shipping_' : 'billing_';
+        try {
+            self::recipient([
+                'state' => $data[$prefix.'state'] ?? '',
+                'phone' => ! empty($data['shipping_phone']) ? $data['shipping_phone'] : ($data['billing_phone'] ?? ''),
+                'address_1' => $data[$prefix.'address_1'] ?? '', 'address_2' => $data[$prefix.'address_2'] ?? '',
+                'first_name' => $data[$prefix.'first_name'] ?? '', 'last_name' => $data[$prefix.'last_name'] ?? '', 'city' => $data[$prefix.'city'] ?? '',
+            ]);
+        } catch (\RuntimeException $e) {
+            $errors->add('raslo_'.strtolower($e->getMessage()), self::errorHelp($e->getMessage()));
+        }
     }
 
     private function locked(int $id, callable $callback): bool
@@ -299,10 +352,13 @@ class DeliveryBridge
                 $order->update_meta_data('_raslo_attempts', $attempts + 1);
                 $order->update_meta_data('_raslo_error', $code);
                 if ($attempts === 0) {
-                    $order->add_order_note('Raslo delivery needs review: '.$code.'. Check WooCommerce → Raslo deliveries and retry using the order action.');
+                    $order->add_order_note('Raslo delivery needs review: '.$code.'. '.self::errorHelp($code).' Check WooCommerce → Raslo deliveries and retry using the order action.');
                 }
                 if (in_array($code, ['HTTP_400', 'HTTP_401', 'HTTP_403', 'HTTP_409', 'HTTP_422', 'ORDER_NOT_ELIGIBLE', 'PRODUCT_MISSING', 'NO_PHYSICAL_ITEMS', 'EMIRATE_REQUIRED', 'PHONE_REQUIRED', 'ADDRESS_REQUIRED'], true)) {
                     $order->update_meta_data('_raslo_attempts', 12);
+                    $order->save();
+
+                    return;
                 }
                 $order->save();
                 $this->schedule('raslo_wc_send_delivery', (int) $id, min(3600, 60 * (2 ** min($attempts, 6))));
@@ -465,7 +521,7 @@ class DeliveryBridge
     {
         echo '<div style="clear:both"><h3>Raslo delivery</h3><p>'.esc_html($order->get_meta('_raslo_tracking_number').' · '.$order->get_meta('_raslo_delivery_status')).'</p>';
         if ($order->get_meta('_raslo_error')) {
-            echo '<p>'.esc_html($order->get_meta('_raslo_error')).' — review settings and use the Raslo retry order action.</p>';
+            echo '<p>'.esc_html($order->get_meta('_raslo_error')).' — '.esc_html(self::errorHelp((string) $order->get_meta('_raslo_error'))).' After correcting, use Raslo: retry/create delivery.</p>';
         }
         echo '<p>Raslo delivery pricing and approval remain in the Raslo merchant dashboard. Cancelling/refunding this WooCommerce order does not automatically cancel a delivery.</p></div>';
     }
@@ -522,7 +578,7 @@ class DeliveryBridge
                 $notice = 'Settings not saved. '.$e->getMessage();
             }
         }
-        echo '<div class="wrap"><h1>Raslo delivery orders · 0.2.0</h1>';
+        echo '<div class="wrap"><h1>Raslo delivery orders · 0.2.1</h1>';
         if ($notice) {
             echo '<div class="notice notice-info"><p>'.esc_html($notice).'</p></div>';
         }

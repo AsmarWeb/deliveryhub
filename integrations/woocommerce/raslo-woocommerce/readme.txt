@@ -3,7 +3,7 @@ Contributors: asmarweb
 Requires at least: 6.5
 Requires PHP: 8.1
 Requires Plugins: woocommerce
-Stable tag: 0.2.0
+Stable tag: 0.2.1
 License: MIT
 
 Private WooCommerce product Feed for Raslo Enterprise. Physical simple products and variations; AED only. Checkout remains in WooCommerce.

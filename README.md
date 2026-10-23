@@ -4,7 +4,7 @@
 
 Raslo connects businesses with delivery partners to manage pricing, assignments, pickup, tracking, and proof of delivery. Previously named DeliveryHub, the project is built with Laravel and an API-first architecture, with a companion Expo application for merchants and drivers.
 
-> Active development. Delivery operations and Enterprise catalog integration are implemented; native store plugins and delivery checkout integrations remain planned. Test coverage and a working development build do not constitute production certification.
+> Active development. Delivery operations, Enterprise catalog and the WooCommerce delivery bridge are implemented as a pilot; production rollout still requires operational acceptance. Test coverage and a working development build do not constitute production certification.
 
 ## What exists today
 
@@ -21,18 +21,13 @@ The companion app has been tested on an Android development build with a real pu
 
 ## Enterprise catalog
 
-Paid Enterprise merchants can connect stores, synchronize products using a shared Push API or compatible HTTPS feed, and publish approved products to web and mobile discovery. Initial feed import starts on connection creation and repeats every 15 minutes. A WooCommerce Feed connector is included as pilot 0.1.0; Shopify remains planned. [Setup and API contract](docs/enterprise-catalog.md).
+Paid Enterprise merchants can connect stores, synchronize products using a shared Push API or compatible HTTPS feed, and publish approved products to web and mobile discovery. Initial feed import starts on connection creation and repeats every 15 minutes. A WooCommerce Feed connector is included as pilot 0.2.1; Shopify remains planned. [Setup and API contract](docs/enterprise-catalog.md).
 
-## E-commerce delivery direction
+## E-commerce delivery integration
 
-The store continues to own its products, checkout, and payment. Raslo will provide the delivery option:
+Paid Enterprise stores can create prepaid deliveries through `POST /api/integrations/v1/deliveries`, read their status and receive signed status callbacks. The WooCommerce 0.2.1 pilot includes catalog feeds and order forwarding. Orders enter pricing; merchant approval is still required before dispatch. Store checkout payments remain with the store.
 
-1. The store submits pickup, destination, and parcel details to request delivery options.
-2. Raslo returns service availability, a delivery price, and an estimated service window.
-3. After the customer chooses delivery and the order is confirmed, the store creates a delivery using a stable external reference and an idempotency key.
-4. Raslo dispatches the delivery and returns tracking and status updates to the store.
-
-**This integration API is planned, not yet available.** It does not require copying an entire product catalog or collecting the store's checkout payment through Raslo.
+Serviceability and guaranteed delivery quotes inside checkout, Shopify adapters, split shipments and automatic cancellation/refunds remain future work. See [the delivery API guide](docs/store-delivery-api.md).
 
 ## Roadmap
 
@@ -43,22 +38,22 @@ The store continues to own its products, checkout, and payment. Raslo will provi
 | Merchant and driver app | Development build | Account flows, delivery operations, in-app and phone notifications |
 | Automation and subscriptions | Implemented; validation continues | Recurring deliveries, dispatch, Stripe billing |
 | Enterprise catalog integration | Implemented | Store keys, paid entitlement, push/feed product sync, run history, publication review, web/mobile discovery |
-| Delivery integration API | Planned | Serviceability and quotes, booking, tracking, signed outgoing webhooks, sandbox |
-| Store connectors | WooCommerce pilot; Shopify planned | Installable WooCommerce Feed plugin and shared contract for custom stores |
+| Delivery integration API | Pilot implemented | Prepaid creation, idempotency, status, tracking and signed callbacks; checkout quotes remain planned |
+| Store connectors | WooCommerce pilot; Shopify planned | Installable WooCommerce catalog and order plugin and shared contract for custom stores |
 | Production pilot | Planned | End-to-end merchant trials, failure recovery, monitoring, deployment hardening |
 
 ## Stack
 
 Laravel 12, PHP 8.4 development target, Sanctum, Laratrust, Stripe Cashier, Docker Compose, Nginx, Redis, and relational storage. The environment template defaults to SQLite; Compose also includes MySQL. Configure database settings to match the selected deployment.
 
-The [mobile application](https://github.com/AsmarWeb/deliveryhub-mobile) uses Expo SDK 57, React Native, and TypeScript.
+The [mobile application](https://github.com/AsmarWeb/raslo-mobile) uses Expo SDK 57, React Native, and TypeScript.
 
 ## Run locally
 
-The repository is currently hosted under its original GitHub name:
+Clone the current repository:
 
 ```bash
-git clone https://github.com/AsmarWeb/deliveryhub.git raslo
+git clone https://github.com/AsmarWeb/raslo.git raslo
 cd raslo
 cp .env.example .env
 docker compose up -d --build
@@ -81,7 +76,7 @@ Inspect GitHub Actions for the current CI result. Earlier local results are not 
 
 ## API and operations
 
-Application endpoints currently use `/api/v1` with Sanctum authentication and resource authorization. These are application APIs; a dedicated catalog integration API is available under `/api/integrations/v1`; store delivery quote/booking integration remains planned.
+Application endpoints currently use `/api/v1` with Sanctum authentication and resource authorization. These are application APIs; a dedicated catalog integration API is available under `/api/integrations/v1`; prepaid delivery creation and status callbacks are available; guaranteed checkout quotes remain planned.
 
 - [Enterprise catalog integration](docs/enterprise-catalog.md)
 - [Catalog OpenAPI](docs/catalog-openapi.json)
@@ -120,7 +115,7 @@ Merchants can set up WooCommerce, download its plugin and OpenAPI contract, insp
 
 ## Enterprise delivery-order API
 
-The optional WooCommerce 0.2.0 bridge forwards new eligible prepaid UAE orders to the existing Raslo pricing/approval workflow. Dedicated delivery keys, idempotency, signed retryable status callbacks and private customer tracking are documented in [the Delivery API guide](docs/store-delivery-api.md). The pilot requires real WordPress/MySQL checkout acceptance before production.
+The optional WooCommerce 0.2.1 bridge forwards new eligible prepaid UAE orders to the existing Raslo pricing/approval workflow. Dedicated delivery keys, idempotency, signed retryable status callbacks and private customer tracking are documented in [the Delivery API guide](docs/store-delivery-api.md). The pilot requires real WordPress/MySQL checkout acceptance before production.
 
 ## Emirate-based automatic pricing
 

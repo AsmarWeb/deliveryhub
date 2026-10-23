@@ -113,3 +113,9 @@ The script refuses non-local environments, names the order as lab data and marks
 ## Validation boundary
 
 Automated backend tests exercise real migrations/services/transactions with SQLite and fake outbound HTTP/queues. WooCommerce tests use boundary doubles for encryption, mapping, shipping-rate eligibility, retry snapshots, HMAC verification, reordered events, early/busy callback retries and manual old-order opt-in. There is no Docker daemon here, so real WordPress/MySQL/HPOS checkout and live queue/callback acceptance must be completed in the supplied lab before production.
+
+## Checkout readiness and error guidance in 0.2.1
+
+The classic WooCommerce checkout validates the selected shipping recipient before payment when Raslo shipping and forwarding are enabled. It uses the same emirate, phone and address mapper as order forwarding. Billing is used when no separate shipping address is selected; shipping phone falls back to billing phone. This is local field validation, not a live API/credential or serviceability check. Checkout Blocks are not covered by this classic hook; paid-order validation remains the fallback for Blocks and API-created orders.
+
+Order administrators receive bilingual corrective guidance for recipient, authorization, conflict and network errors. Terminal rejections save a review state without scheduling a blind retry. After correcting a known validation rejection, use the explicit Raslo retry/create action. Uncertain network results retain the frozen payload and idempotency key. No automatic payment, price approval or WooCommerce status change is added.

@@ -102,7 +102,7 @@ class CatalogWorkspaceTest extends TestCase
         $archive = new \PharData($path);
         $this->assertTrue(isset($archive['raslo-woocommerce/raslo-woocommerce.php']));
         $this->assertTrue(isset($archive['raslo-woocommerce/includes/class-connector.php']));
-        $this->assertStringContainsString('Version: 0.2.0', $archive['raslo-woocommerce/raslo-woocommerce.php']->getContent());
+        $this->assertStringContainsString('Version: 0.2.1', $archive['raslo-woocommerce/raslo-woocommerce.php']->getContent());
         $contract = $this->get('/merchant/integrations/platforms/api/openapi')->assertOk()->assertDownload('raslo-catalog-openapi.json');
         $schema = json_decode(file_get_contents($contract->baseResponse->getFile()->getPathname()), true, 512, JSON_THROW_ON_ERROR);
         $this->assertArrayHasKey('openapi', $schema);

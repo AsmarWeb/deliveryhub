@@ -127,6 +127,9 @@ Route::middleware('auth')->group(function () {
                 ->whereNumber('address')->name('destroy');
         });
 
+    Route::get('/driver/delivery-history', \App\Http\Controllers\Web\DriverDeliveryHistoryController::class)
+        ->name('driver.history.index');
+
     Route::prefix('driver/assignments')
         ->name('driver.assignments.')
         ->controller(DriverAssignmentController::class)

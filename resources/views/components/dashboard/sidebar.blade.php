@@ -121,6 +121,10 @@
                 'icon' => 'truck',
             ],
             [
+                'route' => 'driver.history.index', 'active' => 'driver.history.*',
+                'label' => __('dashboard.delivery_history'), 'icon' => 'package',
+            ],
+            [
                 'route' => 'driver.documents.index', 'active' => 'driver.documents.*',
                 'label' => $isAr ? 'مستنداتي' : 'My documents', 'icon' => 'users',
             ],
@@ -133,7 +137,7 @@
     $upcoming = match ($role) {
         'admin' => [],
         'merchant' => [],
-        'driver' => [__('dashboard.delivery_history')],
+        'driver' => [],
         default => [],
     };
 
